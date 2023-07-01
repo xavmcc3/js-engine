@@ -1,12 +1,37 @@
-// #region Canvas
-const canvas = document.querySelector('canvas')
+// #region Graphics
+// NOTE should probably add 'using pixijs for rendering to 
+// the readme
+const canvas = document.querySelector('canvas') ?? document.createElement('canvas');
 const ctx = canvas.getContext('2d');
+
+// import { Application } from 'pixi.js'
+
+const graphics = new PIXI.Application({
+    backgroundColor: 0x5E5E5E
+});
+document.querySelector('#pixijs').appendChild(graphics.view);
+
+const border = new PIXI.Graphics();
+border.lineStyle({
+    width: 1.3,
+    color: 0xff00cc,
+    alignment: 0.5
+});
+border.drawRect(0, 0, 101, 100);
+graphics.stage.addChild(border);
+console.log()
 
 addEventListener('resize', resize);
 function resize() {
-    const rect = canvas.getBoundingClientRect();
+    let rect = canvas.parentElement.getBoundingClientRect();
     canvas.height = rect.height;
     canvas.width = rect.width;
+
+    rect = graphics.view.parentElement.getBoundingClientRect();
+    graphics.view.height = rect.height;
+    graphics.view.width = rect.width;
+
+    graphics.resize(rect.width, rect.height);
 }
 // #endregion
 
@@ -542,10 +567,15 @@ class Settings {
 //#endregion
 
 class Entity {
+    graphics = new PIXI.Graphics(); // NOTE this creates a new graphics object for every entity, which might be uneccessary
     toDestroy = false;
     constructor(x, y) {
         this.x = x;
         this.y = y;
+
+        this.graphics.beginFill(0xff0000);
+        this.graphics.drawRect(10, 10, 20, 20);
+        graphics.stage.addChild(this.graphics);
     }
 
     start() {
@@ -560,20 +590,21 @@ class Entity {
 
     }
 
+    ondraw() {}
     draw() {
-        ctx.beginPath();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "#ff0000";
-        ctx.arc(this.x, this.y, 5, 0, Math.PI * 2);
-        ctx.stroke();
+        if(this.toDestroy)
+            return;
+
+        this.graphics.position.set(this.x, this.y);
+        this.ondraw();
     }
 
 
-    ondestroy() {
-
-    }
-
+    ondestroy() {}
     destroy() {
+        graphics.stage.removeChild(this.element);
+        this.graphics.destroy();
+        
         this.toDestroy = true;
         this.ondestroy();
     }
@@ -585,7 +616,12 @@ class MouseTracker extends Entity {
         super(x ?? 0, y ?? 0);
     }
 
-    draw() {
+    update() {
+        this.x = Input.x;
+        this.y = Input.y;
+    }
+
+    ondraw() {
         ctx.beginPath();
         ctx.lineWidth = 1;
         ctx.fillStyle = '#ff0000';
@@ -609,7 +645,7 @@ class GamepadTracker extends Entity {
         this.index = index;
     }
 
-    draw() {
+    ondraw() {
         const gamepad = navigator.getGamepads()[this.index];
         if(gamepad == null)
             return;
@@ -769,7 +805,7 @@ class Agent extends Entity {
         }
     }
 
-    draw() {
+    ondraw() {
         ctx.fillStyle = '#ff0000';
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#000000';
@@ -819,7 +855,7 @@ class Particle extends Entity {
         this.destroy();
     }
 
-    draw() {
+    ondraw() {
         ctx.beginPath();
         ctx.fillStyle = '#ff0000';
         ctx.arc(this.x, this.y, Math.max(0, this.r * this.life), 0, Math.PI*2);

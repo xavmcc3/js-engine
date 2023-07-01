@@ -3,11 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <script src="https://pixijs.download/release/pixi.min.js"></script>
     <script src="app.js" defer></script>
+
     <link rel="stylesheet" href="style.css">
     <title>AAAA</title>
 </head>
 <body>
-    <canvas></canvas>
+    <!-- TODO Implement a loading system in js for this -->
+    <!-- Actually just make a whole resoucre loading system -->
+    <!-- And a scene system -->
+    <script src="shaders/vertex.vert" id="vert" type="x-shader/x-vertex"></script>
+    <script src="shaders/fragment.frag" id="frag" type="x-shader/x-fragment"></script>
+
+    <div class="split">
+        <span class="a">
+            <canvas></canvas>
+        </span>
+        <span class="a" id="pixijs"></span>
+    </div>
 </body>
 </html>
