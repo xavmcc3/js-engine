@@ -4,34 +4,18 @@
 const canvas = document.querySelector('canvas') ?? document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
-// import { Application } from 'pixi.js'
-
+const pixijsParent = document.querySelector('#pixijs');
 const graphics = new PIXI.Application({
-    backgroundColor: 0x5E5E5E
+    backgroundColor: 0x5E5E5E,
+    resizeTo: pixijsParent
 });
-document.querySelector('#pixijs').appendChild(graphics.view);
-
-const border = new PIXI.Graphics();
-border.lineStyle({
-    width: 1.3,
-    color: 0xff00cc,
-    alignment: 0.5
-});
-border.drawRect(0, 0, 101, 100);
-graphics.stage.addChild(border);
-console.log()
+pixijsParent.appendChild(graphics.view);
 
 addEventListener('resize', resize);
 function resize() {
     let rect = canvas.parentElement.getBoundingClientRect();
     canvas.height = rect.height;
     canvas.width = rect.width;
-
-    rect = graphics.view.parentElement.getBoundingClientRect();
-    graphics.view.height = rect.height;
-    graphics.view.width = rect.width;
-
-    graphics.resize(rect.width, rect.height);
 }
 // #endregion
 
@@ -572,14 +556,14 @@ class Entity {
     constructor(x, y) {
         this.x = x;
         this.y = y;
-
-        this.graphics.beginFill(0xff0000);
-        this.graphics.drawRect(10, 10, 20, 20);
-        graphics.stage.addChild(this.graphics);
     }
 
     start() {
-        
+        this.graphics.beginFill(0xff0000);
+        this.graphics.drawRect(10, 10, 20, 20);
+
+        this.graphics.endFill();
+        graphics.stage.addChild(this.graphics);
     }
 
     update() {
@@ -591,13 +575,17 @@ class Entity {
     }
 
     ondraw() {}
+    updategraphics() {
+        this.graphics.position.set(this.x, this.y);
+    }
     draw() {
         if(this.toDestroy)
             return;
 
-        this.graphics.position.set(this.x, this.y);
+        this.updategraphics();
         this.ondraw();
     }
+    
 
 
     ondestroy() {}
@@ -614,6 +602,12 @@ class Entity {
 class MouseTracker extends Entity {
     constructor(x, y) {
         super(x ?? 0, y ?? 0);
+    }
+
+    start() {
+        this.graphics.beginFill(0xff0000);
+        this.graphics.drawCircle(0, 0, 5);
+        graphics.stage.addChild(this.graphics);
     }
 
     update() {
@@ -646,6 +640,7 @@ class GamepadTracker extends Entity {
     }
 
     ondraw() {
+        throw new Error("Forgot to add support for pixijs drawing the gamepad lol.");
         const gamepad = navigator.getGamepads()[this.index];
         if(gamepad == null)
             return;
@@ -735,32 +730,30 @@ class Agent extends Entity {
         this.angularAcceleration += force;
     }
 
+    start() {
+        this.graphics.beginFill(0xccff00);
+        // this.graphics.drawRect(0, 0, 100, 100);
+
+        const circle = new PIXI.Graphics();
+        circle.beginFill(0xffcc00);
+        circle.drawCircle(0, 0, 16);
+        circle.drawCircle(this.r - 10, 0, 10);
+        circle.drawCircle(-this.r + 10, 0, 10);
+
+        circle.endFill();
+        this.graphics.endFill();
+
+        this.graphics.addChild(circle);
+        graphics.stage.addChild(this.graphics);
+    }
 
     update() {
         this.addForce(new Vector(0, this.gravity));
 
         const gamepad = Input.gamepads[0];
-        if(gamepad == null)
-            return;
 
-        this.tl = gamepad.buttons[6].value;
-        this.tr = gamepad.buttons[7].value;
-
-        if(this.tr > 0.09)
-        {
-            const p = new Particle(this.x + Math.cos(this.angle + Math.PI/2) * this.r, this.y + Math.sin(this.angle + Math.PI/2) * this.r);
-            p.velocity.setDirection(this.angle + Math.PI + rand(-0.01, 0.01));
-            p.speed = 1;
-            World.instantiate(p);
-        }
-
-        if(this.tl > 0.09)
-        {
-            const p = new Particle(this.x - Math.cos(this.angle + Math.PI/2) * this.r, this.y - Math.sin(this.angle + Math.PI/2) * this.r);
-            p.velocity.setDirection(this.angle + Math.PI + rand(-0.01, 0.01));
-            p.speed = 1;
-            World.instantiate(p);
-        }
+        this.tl = gamepad?.buttons[6].value ?? Input.getKey('ArrowLeft');
+        this.tr = gamepad?.buttons[7].value ?? Input.getKey('ArrowRight');
 
         const force = (this.tl + this.tr) * this.force;
         this.addForce(Vector.one.setMagnitude(force).setDirection(this.angle));
@@ -805,29 +798,35 @@ class Agent extends Entity {
         }
     }
 
+    updategraphics() {
+        this.graphics.position.set(this.x, this.y);
+        this.graphics.rotation = this.angle + Math.PI/2;
+
+        const r = 50;
+        if(this.tr > 0.09)
+        {
+            const p = new Particle(this.graphics.position.x + Math.cos(this.angle + Math.PI/2) * r, this.graphics.position.y + Math.sin(this.angle + Math.PI/2) * r);
+            // p.velocity.setDirection(this.angle + Math.PI + rand(-0.01, 0.01));
+            p.speed = 1;
+            World.instantiate(p);
+        }
+
+        if(this.tl > 0.09)
+        {
+            const p = new Particle(this.x - Math.cos(this.angle + Math.PI/2) * r, this.y - Math.sin(this.angle + Math.PI/2) * r);
+            // p.velocity.setDirection(this.angle + Math.PI + rand(-0.01, 0.01));
+            p.speed = 1;
+            World.instantiate(p);
+        }
+    }
+
     ondraw() {
         ctx.fillStyle = '#ff0000';
         ctx.lineWidth = 2;
         ctx.strokeStyle = '#000000';
 
         ctx.beginPath();
-        ctx.moveTo(this.x + Math.cos(this.angle + Math.PI/2) * this.r, this.y + Math.sin(this.angle + Math.PI/2) * this.r, 10, 0, Math.PI*2);
-        ctx.lineTo(this.x + Math.cos(this.angle) * this.h, this.y + Math.sin(this.angle) * this.h, 5, 0, Math.PI*2);
-        ctx.lineTo(this.x - Math.cos(this.angle + Math.PI/2) * this.r, this.y - Math.sin(this.angle + Math.PI/2) * this.r, 10, 0, Math.PI*2);
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.arc(this.x + Math.cos(this.angle) * this.h, this.y + Math.sin(this.angle) * this.h, 5, 0, Math.PI*2);
-        ctx.fill();
-
-        ctx.beginPath();
-        ctx.fillStyle = '#ff0000';
-        ctx.arc(this.x + Math.cos(this.angle + Math.PI/2) * this.r, this.y + Math.sin(this.angle + Math.PI/2) * this.r, 10, 0, Math.PI*2);
-        ctx.fill();
-        
-        ctx.beginPath();
-        ctx.fillStyle = '#ff0000';
-        ctx.arc(this.x - Math.cos(this.angle + Math.PI/2) * this.r, this.y - Math.sin(this.angle + Math.PI/2) * this.r, 10, 0, Math.PI*2);
+        ctx.arc(this.graphics.position.x, this.graphics.position.y, 5, 0, Math.PI*2);
         ctx.fill();
     }
 }
@@ -843,6 +842,19 @@ class Particle extends Entity {
         super(x ?? 0, y ?? 0);
     }
 
+    start() {
+        this.graphics.beginFill(0xff00cc);
+        this.graphics.drawCircle(0, 0, this.r);
+
+        this.graphics.endFill();
+        this.graphics.pivot.x = this.graphics.width / 2;
+        this.graphics.pivot.y = this.graphics.height / 2;
+
+        this.graphics.blendMode = PIXI.BLEND_MODES.ADD;
+        
+        graphics.stage.addChild(this.graphics);
+    }
+
     update() {
         this.x += this.velocity.x;
         this.y += this.velocity.y;
@@ -855,11 +867,9 @@ class Particle extends Entity {
         this.destroy();
     }
 
-    ondraw() {
-        ctx.beginPath();
-        ctx.fillStyle = '#ff0000';
-        ctx.arc(this.x, this.y, Math.max(0, this.r * this.life), 0, Math.PI*2);
-        ctx.fill();
+    updategraphics() {
+        this.graphics.position.set(this.x, this.y);
+        this.graphics.scale.set(this.life);
     }
 }
 //#endregion
@@ -907,8 +917,5 @@ class World {
 }
 
 World.start(() => {
-    // NOTE gamepad trackers are instantiated in Input; make a onGamepadConnected event for that
-    World.instantiate(new MouseTracker());
-
     World.instantiate(new Agent(canvas.width / 2, canvas.height / 2));
 });
