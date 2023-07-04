@@ -731,19 +731,17 @@ class Agent extends Entity {
     }
 
     start() {
-        this.graphics.beginFill(0xccff00);
-        // this.graphics.drawRect(0, 0, 100, 100);
-
-        const circle = new PIXI.Graphics();
-        circle.beginFill(0xffcc00);
-        circle.drawCircle(0, 0, 16);
-        circle.drawCircle(this.r - 10, 0, 10);
-        circle.drawCircle(-this.r + 10, 0, 10);
-
-        circle.endFill();
-        this.graphics.endFill();
-
-        this.graphics.addChild(circle);
+        // this.graphics.beginFill(0xccff00);
+        // this.graphics.endFill();
+        
+        const circles = new PIXI.Graphics();
+        circles.beginFill(0xffcc00);
+        circles.drawCircle(0, 0, 16);
+        circles.drawCircle(this.r - 10, 0, 10);
+        circles.drawCircle(-this.r + 10, 0, 10);
+        circles.endFill();
+        
+        this.graphics.addChild(circles);
         graphics.stage.addChild(this.graphics);
     }
 
@@ -757,6 +755,21 @@ class Agent extends Entity {
 
         const force = (this.tl + this.tr) * this.force;
         this.addForce(Vector.one.setMagnitude(force).setDirection(this.angle));
+
+        const r = this.r -10;
+        if(this.tr > 0.09)
+        {
+            const p = new Particle(this.x + Math.cos(this.angle + Math.PI/2) * r, this.y + Math.sin(this.angle + Math.PI/2) * r);
+            p.speed = 1;
+            World.instantiate(p);
+        }
+
+        if(this.tl > 0.09)
+        {
+            const p = new Particle(this.x - Math.cos(this.angle + Math.PI/2) * r, this.y - Math.sin(this.angle + Math.PI/2) * r);
+            p.speed = 1;
+            World.instantiate(p);
+        }
 
         this.addAngularForce(this.tl * this.angularForce);
         this.addAngularForce(-this.tr * this.angularForce);
@@ -801,33 +814,6 @@ class Agent extends Entity {
     updategraphics() {
         this.graphics.position.set(this.x, this.y);
         this.graphics.rotation = this.angle + Math.PI/2;
-
-        const r = 50;
-        if(this.tr > 0.09)
-        {
-            const p = new Particle(this.graphics.position.x + Math.cos(this.angle + Math.PI/2) * r, this.graphics.position.y + Math.sin(this.angle + Math.PI/2) * r);
-            // p.velocity.setDirection(this.angle + Math.PI + rand(-0.01, 0.01));
-            p.speed = 1;
-            World.instantiate(p);
-        }
-
-        if(this.tl > 0.09)
-        {
-            const p = new Particle(this.x - Math.cos(this.angle + Math.PI/2) * r, this.y - Math.sin(this.angle + Math.PI/2) * r);
-            // p.velocity.setDirection(this.angle + Math.PI + rand(-0.01, 0.01));
-            p.speed = 1;
-            World.instantiate(p);
-        }
-    }
-
-    ondraw() {
-        ctx.fillStyle = '#ff0000';
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = '#000000';
-
-        ctx.beginPath();
-        ctx.arc(this.graphics.position.x, this.graphics.position.y, 5, 0, Math.PI*2);
-        ctx.fill();
     }
 }
 
@@ -847,11 +833,8 @@ class Particle extends Entity {
         this.graphics.drawCircle(0, 0, this.r);
 
         this.graphics.endFill();
-        this.graphics.pivot.x = this.graphics.width / 2;
-        this.graphics.pivot.y = this.graphics.height / 2;
 
         this.graphics.blendMode = PIXI.BLEND_MODES.ADD;
-        
         graphics.stage.addChild(this.graphics);
     }
 
