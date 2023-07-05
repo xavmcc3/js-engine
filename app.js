@@ -550,6 +550,112 @@ class Settings {
 }
 //#endregion
 
+//#region Sequencer
+class Task {
+    ended = false;
+    constructor(callback) {
+        this.callback = callback ?? (() => {});
+    }
+
+    update() {
+        this.ended = this.callback();
+        return !this.ended;
+    }
+}
+
+class IntervalTask extends Task {
+    interval = 0;
+    time = 1; // TODO make this time based not framerate based
+    // TODO its not even frame dependent rn its just random
+    constructor(callback, ticks) {
+        super(callback);
+        this.interval = 1 / ticks;
+    }
+
+    update() {
+        this.ended = this.callback(1 - this.time);
+
+        this.time -= this.interval;
+        if(this.time <= 0)
+            return false;
+
+        return !this.ended;
+    }
+}
+
+class Sequencer {
+    static sequencers = [];
+    static update() {
+        for(let i = this.sequencers.length - 1; i >= 0; i--) {
+            const res = this.sequencers[i].update();
+            if(!res)
+                continue;
+            
+            this.sequencers.splice(i, 1);
+        }
+    }
+    
+    static create() {
+        return new Sequencer();
+    }
+
+    task;
+    tasks = [];
+    current = 0;
+    constructor() {
+        
+    }
+
+    start() {
+        Sequencer.sequencers.push(this);
+    }
+
+    update() {
+        if(this.current >= this.tasks.length) {
+            // console.log('finished sequence');
+            return true;
+        }
+        
+        if(this.task == null) {
+            const opts = this.tasks[this.current];
+            this.task = new (opts.prototype)(...opts.args);
+        }
+
+        // If the task update returns false, it means it has
+        // finished, so we increment the current task by one.
+        this.gotoflag = false;
+        if(!this.task.update()) {
+            if(this.gotoflag) return false; // prevent incrementing if the update already incremented
+            this.goto(this.current + 1);
+            return false;
+        }
+
+        return false;
+    }
+
+    goto(index) {
+        this.gotoflag = true;
+        this.current = index;
+        this.task = null;
+    }
+    
+    add(prototype = Task, ...args) {
+        if(args == null || args.length <= 0)
+            args = [() => {}];
+        
+        this.tasks.push({ prototype, args }); 
+        return this.tasks.length - 1;
+    }
+
+    once(callback) {
+        return this.add(Task, () => {
+            callback();
+            return true;
+        });
+    }
+} // NOTE add to the README "return true to end the task"
+//#endregion
+
 class Entity {
     graphics = new PIXI.Graphics(); // NOTE this creates a new graphics object for every entity, which might be uneccessary
     toDestroy = false;
@@ -855,6 +961,49 @@ class Particle extends Entity {
         this.graphics.scale.set(this.life);
     }
 }
+
+class Circle extends Entity {
+    scale = 1;
+    constructor(x, y) {
+        super(x, y);
+
+        const s = Sequencer.create();
+        let startingScale = this.scale;
+
+        const gotopoint = s.add(IntervalTask, t => {
+            const i = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+            this.scale = startingScale + (5 - startingScale) * i;
+        }, 60);
+
+        s.once(() => startingScale = 5);
+        s.add(IntervalTask, t => {
+            const i = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+            this.scale = startingScale + (2 - startingScale) * i;
+        }, 60);
+
+        s.once(() => startingScale = 2);
+        s.add(IntervalTask, t => {
+            const i = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
+            this.scale = startingScale + (2 - startingScale) * i;
+        }, 10);
+        
+        s.once(() => s.goto(gotopoint));
+        s.start();
+    }
+
+    start() {
+        this.graphics.beginFill(0x6655ff);
+        this.graphics.drawCircle(0, 0, 20);
+        this.graphics.endFill();
+
+        graphics.stage.addChild(this.graphics);
+    }
+
+    updategraphics() {
+        this.graphics.position.set(this.x, this.y);
+        this.graphics.scale.set(this.scale, this.scale);
+    }
+}
 //#endregion
 
 class World {
@@ -880,6 +1029,7 @@ class World {
         Input.prep();
 
         Settings.update();
+        Sequencer.update(); // maybe after other things
 
         World.entities.forEach(entity => entity.update());
         ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -899,6 +1049,8 @@ class World {
     }
 }
 
+// TODO Make a new function for graphics initialization instead of start
 World.start(() => {
+    World.instantiate(new Circle(canvas.width / 2, canvas.height / 2));
     World.instantiate(new Agent(canvas.width / 2, canvas.height / 2));
 });
