@@ -296,6 +296,7 @@ class MenuHeader extends MenuItem {
 
 
 class Selectable extends MenuItem {
+    static buttons = ['Enter']
     select() {
         this.selected = true;
         this.element.classList.add('selected');
@@ -305,10 +306,24 @@ class Selectable extends MenuItem {
         this.selected = false;
         this.element.classList.remove('selected');
     }
+
+    // TODO make this trigger for an array of input button 
+    // presses and pass the specific button in as a parameter
+    use(input) {
+        if(!(this.constructor.buttons.includes(input)))
+            return;
+
+        this.used(input);
+    }
+
+    used(input) {
+        this.element.click();
+    }
 }
 
 
 class MenuButton extends Selectable {
+    // static buttons = ['Enter'] // NOTE this can be changed to include inputs like arrow keys to increment a value
     element = (() => {
         const element = document.createElement('button');
         element.addEventListener('click', e => {
@@ -316,6 +331,7 @@ class MenuButton extends Selectable {
         });
         return element;
     })();
+
 
     constructor(text, callback) {
         super();
@@ -494,6 +510,7 @@ class MenuDropdown extends Selectable {
 // NOTE this shit doesn't work when there's text interrupting 
 // the buttons so... idk
 class Settings {
+    static keys = ['Enter', 'ArrowLeft', 'ArrowRight']
     static menu = Menu.create();
     static selectedIndex = 0;
     
@@ -538,6 +555,10 @@ class Settings {
         this.menu.select(this.menu.children[this.selectedIndex]);
     }
 
+    static get currentItem() {
+        return this.menu.children[this.selectedIndex];
+    }
+
     static update() {
         if(Input.getKeyDown('ArrowDown')) {
             this.increment(1);
@@ -545,6 +566,14 @@ class Settings {
 
         if(Input.getKeyDown('ArrowUp')) {
             this.increment(-1);
+        }
+
+        for(const key of Settings.keys) {
+            if(!Input.getKeyDown(key))
+                continue;
+
+            Settings.currentItem.use(key);
+            // break;
         }
     }
 }
