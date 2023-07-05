@@ -1,6 +1,8 @@
 # Js Engine
 WOOOOOOHOOOO NEW JAVAFUCKINGSCRIPT THING
 
+Uses pixijs for rendering
+
 ## Why
 idfk, its useful for some things
 
@@ -10,6 +12,12 @@ really dont wanna write this fr fr ong
 ## Processes
 
 ## Entities
+
+## Input
+
+## Sequencer
+
+## Menu
 
 ## Vectors
 
