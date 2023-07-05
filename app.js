@@ -199,7 +199,7 @@ class Process {
 //#region Menus
 class MenuItem {
     selected = false;
-    elements = [];
+    children = [];
     element;
 
     append(root) {
@@ -225,7 +225,7 @@ class MenuItem {
     }
 
     add(menuitem) {
-        this.elements.push(menuitem);
+        this.children.push(menuitem);
         this.element.appendChild(menuitem.element);
         return menuitem;
     }
@@ -246,7 +246,7 @@ class Menu extends MenuItem {
     }
 
     select(element) {
-        if(!this.elements.includes(element))
+        if(!this.children.includes(element))
             return;
 
         if(this.selected != null)
@@ -508,14 +508,14 @@ class Settings {
 
     static increment(n) {
         this.selectedIndex += n;
-        this.selectedIndex = Math.min(this.menu.elements.length - 1, Math.max(this.selectedIndex, 0));
+        this.selectedIndex = Math.min(this.menu.children.length - 1, Math.max(this.selectedIndex, 0));
 
         let i = 0;
         let increment = Math.sign(n);
         if(increment == 0)
             increment = 1;
-        const len = this.menu.elements.length ?? 0;
-        let constructor = this.menu.elements[this.selectedIndex].constructor;
+        const len = this.menu.children.length ?? 0;
+        let constructor = this.menu.children[this.selectedIndex].constructor;
         while(!(constructor.prototype instanceof Selectable)) {
             i++;
             if(i >= len)
@@ -529,13 +529,13 @@ class Settings {
                 continue;
             }
             
-            constructor = this.menu.elements[this.selectedIndex].constructor;
+            constructor = this.menu.children[this.selectedIndex].constructor;
         }
         
-        if(!(this.menu.elements[this.selectedIndex].constructor.prototype instanceof Selectable))
+        if(!(this.menu.children[this.selectedIndex].constructor.prototype instanceof Selectable))
             return;
 
-        this.menu.select(this.menu.elements[this.selectedIndex]);
+        this.menu.select(this.menu.children[this.selectedIndex]);
     }
 
     static update() {

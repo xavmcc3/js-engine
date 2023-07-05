@@ -62,7 +62,6 @@ canvas {
     /* border: 1px solid rgb(25, 116, 11); */
 }
 
-/* #region Box */
 div {
     z-index: 4;
     display: block;
@@ -72,150 +71,15 @@ div {
     min-width: 10px;
     min-height: 10px;
 
-    color: #ffffff;
-    border-radius: 5px;
-    border: 1px solid #626262;
-    background: linear-gradient(45deg, #1b1b1bb0, #1b1b1b9e);
-    backdrop-filter: blur(8px);
+    color: #000000;
+    background-color: #ffffff;
 
     left: 10px;
     top: 10px;
-
-    box-shadow: 0 0 0.4em #0000007b;
 }
-
-div h2 {
-    margin: 0;
-    border-bottom: 2px solid #565656;
-}
-
-div button {
-    font-weight: bold;
-    color: #ffffff;
-
-    outline: none;
-    margin: 4px 0;
-    border: 3px solid #00ccff;
-    background-color: transparent;
-    border-radius: 25px;
-    padding: 6px 14px;
-
-    transition: all 0.1s ease-out;
-}
-div button:hover {
-    background-color: #00ccff;
-}
-div button:active {
-    transform: scale(0.96);
-}
-
-div label.checkbox {
-    display: inline-block;
-    width: 100%;
-    padding: 7px 0;
-
-    border-radius: 5px;
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    gap: 5px;
-}
-
-div label.checkbox:hover {
-    background-color: #00ccff5c;
-    transition: all 0.2s ease-out;
-}
-
-div label.checkbox span {
-    transition: all 0.1s ease-out;
-
-    display: block;
-    width: 10px;
-    height: 10px;
-
-    border: 3px solid #00ccff;
-    border-radius: 10px;
-}
-
-div label.checkbox input[type='checkbox'] {
-    display: none;
-}
-
-div label.checkbox input[type='checkbox']:checked ~ span {
-    background-color: #00ccff;
-}
-
-div label.checkbox:active input[type='checkbox'] ~ span {
-    transform: scale(0.7);
-}
-
-div label p {
-    padding: 0;
-    margin: 0;
-}
-
-div fieldset {
-    border: none;
-    padding: 0;
-
-    padding-left: 3px;
-    border-left: 4px solid #ffffff32;
-    border-radius: 5px;
-}
-
-div label.radio {
-    display: inline-block;
-    width: 100%;
-    padding: 7px 0;
-
-    border-radius: 5px;
-    display: flex;
-    flex-flow: row nowrap;
-    align-items: center;
-    gap: 5px;
-}
-
-div label.radio:hover {
-    background-color: #00ccff5c;
-    transition: all 0.2s ease-out;
-}
-
-div label.radio input[type='radio'] {
-    appearance: none;
-    display: none;
-}
-
-div label.radio span {
-    transition: all 0.1s ease-out;
-    
-    display: block;
-    width: 10px;
-    height: 10px;
-
-    border: 3px solid #00ccff;
-    border-radius: 10px;
-}
-
-div label.radio input[type='radio']:checked ~ span {
-    background-color: #00ccff;
-}
-
-div label.radio:active input[type='radio'] ~ span {
-    transform: scale(0.7);
-}
-
-div select {
-    border: 1px solid #626262;
-    background-color: #000000;
-
-    border-radius: 5px;
-    padding: 3px 4px;
-    color: #ffffff;
-}
-/* #endregion */
 
 .selected {
-    border: 3px solid white;
+    border: 1px solid #ff0000;
     padding: 5px;
     border-radius: 5px;
 }
