@@ -201,15 +201,29 @@ class MenuItem {
     selected = false;
     children = [];
     element;
+    
+    gap = 5;
+    height = 16;
+    x = 0; y = 0;
 
-    graphic;
+    heightCalc = this.height + this.gap;
+
+    graphic = (() => {
+        const graphic = new PIXI.Graphics();
+        graphic.beginFill(0x33ff88);
+        graphic.drawRect(this.x, this.y, 10, this.height);
+        graphic.endFill();
+
+        return graphic;
+    })();
 
     append(root) {
-        const r = root ?? document.body;
-        r.appendChild(this.element);
-        return this.element;
+        const r = root ?? graphics.stage;
+        r.addChild(this.graphic);
+        return this.graphic;
     }
 
+    //#region TODO remove
     setAttribute(key, value) {
         this.element.setAttribute(key, value);
     }
@@ -225,11 +239,53 @@ class MenuItem {
     getStyle(key) {
         return getComputedStyle(this.element)[key];
     }
+    //#endregion
+
+    setPos(x, y) {
+        this.x = x;
+        this.y = y;
+        this.graphic.position.set(x, y);
+        return this;
+    }
+
+    set(key, value) {
+        this.graphic[key] = value;
+        return this;
+    }
+
+    setHeight(h) {
+        this.height = h ?? this.height;
+        this.recalculateHeights(); // NOTE only do this part in containers and such (?)
+
+        return this;
+    }
 
     add(menuitem) {
+        const container = new PIXI.Graphics();
+        container.position.set(0, this.heightCalc);
+        
+        container.addChild(menuitem.graphic);
+        this.graphic.addChild(container);
+        
         this.children.push(menuitem);
-        this.element.appendChild(menuitem.element);
+        this.heightCalc += menuitem.y + menuitem.height + this.gap;
+
         return menuitem;
+    }
+
+    use() {
+        throw new Error(this.constructor.name + ' is not a selctable menu item.');
+    }
+
+    recalculateHeights() {
+        this.heightCalc = this.height + this.gap;
+        for(const child of this.children) {
+            const parent = child.graphic.parent;
+            parent.position.set(parent.position.x, this.heightCalc);
+            this.heightCalc += child.y + child.height + this.gap;
+        }
+
+        return this.heightCalc;
     }
 }
 
@@ -244,18 +300,17 @@ class Menu extends MenuItem {
     graphic = (() => {
         const graphic = new PIXI.Graphics();
         graphic.beginFill(0x3388dd);
-        graphic.drawRect(100, 100, 160, 160);
+        graphic.drawRect(this.x, this.y, 160, this.height/*heightCalc*/);
         graphic.endFill();
 
         return graphic;
     })();
 
-    static create(root) {
+    static create(x, y, root) {
         const menu = new Menu();
-        menu.append(root); //
+        menu.setPos(x, y);
 
-        graphics.stage.addChild(menu.graphic);
-
+        menu.append(root);
         return menu;
     }
 
@@ -525,14 +580,31 @@ class MenuDropdown extends Selectable {
 // the buttons so... idk
 class Settings {
     static keys = ['Enter', 'ArrowLeft', 'ArrowRight']
-    static menu = Menu.create();
+    static menu = Menu.create(100, 120);
     static selectedIndex = 0;
     
     static setup() {
-        this.menu.add(new MenuHeader("Settings Menu"));
-        this.menu.add(new MenuText("text"));
-        this.menu.add(new MenuButton("button"));
-        this.menu.add(new MenuToggle("checkbox"));
+        
+        // this.menu.add(new MenuHeader("Settings Menu"));
+        // this.menu.add(new MenuText("text"));
+        // this.menu.add(new MenuButton("button"));
+        // this.menu.add(new MenuToggle("checkbox"));
+        this.menu.add(new MenuItem().setPos(0, 5).setHeight(16));
+        this.menu.add(new MenuItem().setPos(10,0).setHeight(20));
+
+        this.menu.add(new MenuItem().setPos(0, 5).setHeight(16));
+        this.menu.add(new MenuItem().setPos(10,0).setHeight(20));
+
+        this.menu.add(new MenuItem().setPos(0, 5).setHeight(16));
+        this.menu.add(new MenuItem().setPos(10,0).setHeight(20));
+
+        this.menu.add(new MenuItem().setPos(0, 50).setHeight(16));
+        this.menu.add(new MenuItem().setPos(10,0).setHeight(20));
+        // this.menu.add(new MenuGroup());
+        // this.menu.add(new MenuButton("button"));
+        // this.menu.add(new MenuToggle("checkbox"));
+        this.menu.setHeight(1);
+        this['menu'].setHeight(16);
 
         this.increment(0);
     }
