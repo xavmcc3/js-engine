@@ -259,16 +259,16 @@ class Menu extends MenuItem {
         return menu;
     }
 
-    select(element) {
-        if(!this.children.includes(element))
+    select(child) {
+        if(!this.children.includes(child))
             return;
 
         if(this.selected != null)
             this.selected?.deselect();
 
-        element.select();
-        this.selected = element;
-        return element;
+        child.select();
+        this.selected = child;
+        return child;
     }
 
     deselect() {
