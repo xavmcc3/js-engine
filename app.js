@@ -202,6 +202,8 @@ class MenuItem {
     children = [];
     element;
 
+    graphic;
+
     append(root) {
         const r = root ?? document.body;
         r.appendChild(this.element);
@@ -239,9 +241,21 @@ class Menu extends MenuItem {
         return element;
     })();
 
+    graphic = (() => {
+        const graphic = new PIXI.Graphics();
+        graphic.beginFill(0x3388dd);
+        graphic.drawRect(100, 100, 160, 160);
+        graphic.endFill();
+
+        return graphic;
+    })();
+
     static create(root) {
         const menu = new Menu();
-        menu.append(root);
+        menu.append(root); //
+
+        graphics.stage.addChild(menu.graphic);
+
         return menu;
     }
 
