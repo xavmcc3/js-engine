@@ -17,6 +17,8 @@ really dont wanna write this fr fr ong
 
 ## Sequencer
 
+## Scenes
+
 ## Menu
 
 ## Vectors
