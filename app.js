@@ -491,59 +491,119 @@ class MenuDropdown extends Selectable {
 //#region Settings
 // NOTE this shit doesn't work when there's text interrupting 
 // the buttons so... idk
-class Settings {
-    static menu = Menu.create();
-    static selectedIndex = 0;
+// class Settings {
+//     static menu = Menu.create();
+//     static selectedIndex = 0;
     
-    static setup() {
-        this.menu.add(new MenuHeader("Settings Menu"));
-        this.menu.add(new MenuText("text"));
-        this.menu.add(new MenuButton("button"));
-        this.menu.add(new MenuToggle("checkbox"));
+//     static setup() {
+//         this.menu.add(new MenuHeader("Settings Menu"));
+//         this.menu.add(new MenuText("text"));
+//         this.menu.add(new MenuButton("button"));
+//         this.menu.add(new MenuToggle("checkbox"));
 
-        this.increment(0);
-    }
+//         this.increment(0);
+//     }
 
-    static increment(n) {
-        this.selectedIndex += n;
-        this.selectedIndex = Math.min(this.menu.children.length - 1, Math.max(this.selectedIndex, 0));
+//     static increment(n) {
+//         this.selectedIndex += n;
+//         this.selectedIndex = Math.min(this.menu.children.length - 1, Math.max(this.selectedIndex, 0));
 
-        let i = 0;
-        let increment = Math.sign(n);
-        if(increment == 0)
-            increment = 1;
-        const len = this.menu.children.length ?? 0;
-        let constructor = this.menu.children[this.selectedIndex].constructor;
-        while(!(constructor.prototype instanceof Selectable)) {
-            i++;
-            if(i >= len)
-                break;
+//         let i = 0;
+//         let increment = Math.sign(n);
+//         if(increment == 0)
+//             increment = 1;
+//         const len = this.menu.children.length ?? 0;
+//         let constructor = this.menu.children[this.selectedIndex].constructor;
+//         while(!(constructor.prototype instanceof Selectable)) {
+//             i++;
+//             if(i >= len)
+//                 break;
                 
-            this.selectedIndex += increment;
+//             this.selectedIndex += increment;
 
-            if(this.selectedIndex >= len - 1 || this.selectedIndex <= 0) {
-                increment *= -1;
-                this.selectedIndex += increment;
-                continue;
-            }
+//             if(this.selectedIndex >= len - 1 || this.selectedIndex <= 0) {
+//                 increment *= -1;
+//                 this.selectedIndex += increment;
+//                 continue;
+//             }
             
-            constructor = this.menu.children[this.selectedIndex].constructor;
-        }
+//             constructor = this.menu.children[this.selectedIndex].constructor;
+//         }
         
-        if(!(this.menu.children[this.selectedIndex].constructor.prototype instanceof Selectable))
-            return;
+//         if(!(this.menu.children[this.selectedIndex].constructor.prototype instanceof Selectable))
+//             return;
 
-        this.menu.select(this.menu.children[this.selectedIndex]);
+//         this.menu.select(this.menu.children[this.selectedIndex]);
+//     }
+
+//     static update() {
+//         if(Input.getKeyDown('ArrowDown')) {
+//             this.increment(1);
+//         }
+
+//         if(Input.getKeyDown('ArrowUp')) {
+//             this.increment(-1);
+//         }
+//     }
+// }
+//#endregion
+
+//#region Scenes
+class Scene {
+    static scenes = {};
+    static scene;
+
+    static add(id, start) {
+        if(typeof id == 'function') {
+            start = id;
+            id = null;
+        }
+
+        const scene = new Scene(id, start);
+        this.scenes[id] = scene;
+        return scene;
     }
 
-    static update() {
-        if(Input.getKeyDown('ArrowDown')) {
-            this.increment(1);
+    static load(id) {
+        if(typeof id == 'object') {
+            Scene.scenes[id.id] = id;
+            id = id.id;
         }
 
-        if(Input.getKeyDown('ArrowUp')) {
-            this.increment(-1);
+        const scene = Scene.scenes[id];
+        if(scene == null)
+            return;
+        
+        Scene.unload();
+        Scene.scene = scene.load();
+    }
+
+    static unload() {
+        for(let i = World.entities.length - 1; i >= 0; i--) {
+            if(World.entities[i].preserve)
+                continue;
+            
+            World.entities[i].unload();
+            World.entities.splice(i, 1);
         }
+
+        this.scene = null;
+    }
+
+
+    constructor(id, start) {
+        if(typeof id == 'function') {
+            start = id;
+            id = null;
+        }
+
+        this.id = id;
+        this.start = start ?? (() => { console.log("scene '" + this.id + "' has no start function"); });
+    }
+
+    load() {
+        this.start();
+        return this;
     }
 }
 //#endregion
@@ -656,6 +716,7 @@ class Sequencer {
 
 class Entity {
     graphics = new PIXI.Graphics(); // NOTE this creates a new graphics object for every entity, which might be uneccessary
+    preserve = false;
     toDestroy = false;
     constructor(x, y) {
         this.x = x;
@@ -690,15 +751,24 @@ class Entity {
         this.ondraw();
     }
     
+    onunload() {}
+    unload() {
+        this.onunload();
 
+        this.removeGraphics();
+    }
 
     ondestroy() {}
     destroy() {
-        graphics.stage.removeChild(this.element);
-        this.graphics.destroy();
-        
         this.toDestroy = true;
         this.ondestroy();
+
+        this.removeGraphics();
+    }
+
+    removeGraphics() {
+        graphics.stage.removeChild(this.element);
+        this.graphics.destroy();
     }
 }
 
@@ -1013,7 +1083,7 @@ class World {
         resize();
         setup();
 
-        Settings.setup();
+        //Settings.setup();
         World.update();
     }
 
@@ -1026,7 +1096,7 @@ class World {
         World.time = requestAnimationFrame(World.update);
         Input.prep();
 
-        Settings.update();
+        //Settings.update();
         Sequencer.update(); // maybe after other things
 
         World.entities.forEach(entity => entity.update());
@@ -1047,8 +1117,9 @@ class World {
     }
 }
 
-// TODO Make a new function for graphics initialization instead of start
-World.start(() => {
-    World.instantiate(new Circle(canvas.width / 2, canvas.height / 2));
-    World.instantiate(new Agent(canvas.width / 2, canvas.height / 2));
+World.start();
+
+const main = new Scene(() => {
+    World.instantiate(new Agent(canvas.width/2, canvas.height/2));
 });
+Scene.load(main);
