@@ -1,6 +1,4 @@
 // #region Graphics
-// NOTE should probably add 'using pixijs for rendering to 
-// the readme
 const canvas = document.querySelector('canvas') ?? document.createElement('canvas');
 const ctx = canvas.getContext('2d');
 
