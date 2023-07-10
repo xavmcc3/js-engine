@@ -561,6 +561,8 @@ class Particle extends Entity {
 }
 //#endregion
 
+// NOTE processes and menus might get 
+// messed up on scene changes
 class World {
     static gamepads = {};
     static entities = [];
