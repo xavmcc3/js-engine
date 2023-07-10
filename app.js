@@ -1120,6 +1120,7 @@ class World {
 World.start();
 
 const main = new Scene(() => {
+    World.instantiate(new Circle(canvas.width/2, canvas.height/2));
     World.instantiate(new Agent(canvas.width/2, canvas.height/2));
 });
 Scene.load(main);
