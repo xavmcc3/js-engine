@@ -656,7 +656,7 @@ class IntervalTask extends Task {
     // NOTE idk i mightve fixed it
     constructor(callback, ticks) {
         super(callback);
-        this.interval = 1 / ticks;
+        this.interval = (1 / ticks) / Time.frameRate;
     }
 
     update() {
@@ -976,10 +976,10 @@ class Agent extends Entity {
     }
 
     // NOTE only multplying the position change by delta might
-    // be a bad idea
+    // be a bad idea, but it seems to work
     lateupdate() {
-        this.velocity.x += this.acceleration.x * Time.delta;
-        this.velocity.y += this.acceleration.y * Time.delta;
+        this.velocity.x += this.acceleration.x;
+        this.velocity.y += this.acceleration.y;
         this.acceleration = Vector.zero;
         this.x += this.velocity.x * Time.delta;
         this.y += this.velocity.y * Time.delta;
@@ -989,7 +989,7 @@ class Agent extends Entity {
         this.velocity.y *= this.friction;
 
         this.angularVelocity += this.angularAcceleration;
-        this.angle += this.angularVelocity;
+        this.angle += this.angularVelocity * Time.delta;
         this.angularAcceleration = 0;
         
         this.angularVelocity = Math.min(Math.abs(this.angularVelocity), 0.015) * Math.sign(this.angularVelocity);
@@ -1069,19 +1069,19 @@ class Circle extends Entity {
         const gotopoint = s.add(IntervalTask, t => {
             const i = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
             this.scale = startingScale + (5 - startingScale) * i;
-        }, 60);
+        }, 1);
 
         s.once(() => startingScale = 5);
         s.add(IntervalTask, t => {
             const i = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
             this.scale = startingScale + (2 - startingScale) * i;
-        }, 60);
+        }, 1);
 
         s.once(() => startingScale = 2);
         s.add(IntervalTask, t => {
             const i = t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
             this.scale = startingScale + (2 - startingScale) * i;
-        }, 10);
+        }, 1);
         
         s.once(() => s.goto(gotopoint));
         s.start();
@@ -1121,7 +1121,7 @@ class World {
     }
 
     static update() {
-        Time.frames = requestAnimationFrame(World.update);
+        Time.frames = requestAnimationFrame(World.update); // TODO bring back
         Time.getDelta();
         Input.prep();
 
@@ -1146,6 +1146,14 @@ class World {
     }
 }
 
+// for simulating low framerates
+// setInterval(() => { //
+//     setTimeout(() => {
+//         World.update();
+//     }, rand(0, 10000));
+// }, 10);
+
+// TODO Set framerate n shit here
 World.start();
 
 const main = new Scene(() => {
