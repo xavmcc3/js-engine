@@ -68,6 +68,34 @@ class Vector {
 }
 //#endregion
 
+//#region Time
+class Time {
+    static last = Date.now();
+    static startTime = 0;
+    static frames = 0;
+    static delta = 0;
+
+    static frameRate = 60;
+
+    static start() {
+        Time.startTime = Date.now();
+    }
+
+    static getDelta() {
+        const delta = (Date.now() - Time.last) / Time.targetTime;
+        Time.last = Date.now();
+        
+        Time.delta = delta;
+        Time.time = Date.now() - Time.startTime;
+        return delta;
+    }
+
+    static get targetTime() {
+        return 1000 / Time.frameRate;
+    }
+}
+//#endregion
+
 //#region Input
 class Input {
     static x = 0;
@@ -625,6 +653,7 @@ class IntervalTask extends Task {
     interval = 0;
     time = 1; // TODO make this time based not framerate based
     // TODO its not even frame dependent rn its just random
+    // NOTE idk i mightve fixed it
     constructor(callback, ticks) {
         super(callback);
         this.interval = 1 / ticks;
@@ -633,7 +662,7 @@ class IntervalTask extends Task {
     update() {
         this.ended = this.callback(1 - this.time);
 
-        this.time -= this.interval;
+        this.time -= this.interval * Time.delta;
         if(this.time <= 0)
             return false;
 
@@ -905,9 +934,6 @@ class Agent extends Entity {
     }
 
     start() {
-        // this.graphics.beginFill(0xccff00);
-        // this.graphics.endFill();
-        
         const circles = new PIXI.Graphics();
         circles.beginFill(0xffcc00);
         circles.drawCircle(0, 0, 16);
@@ -949,12 +975,14 @@ class Agent extends Entity {
         this.addAngularForce(-this.tr * this.angularForce);
     }
 
+    // NOTE only multplying the position change by delta might
+    // be a bad idea
     lateupdate() {
-        this.velocity.x += this.acceleration.x;
-        this.velocity.y += this.acceleration.y;
+        this.velocity.x += this.acceleration.x * Time.delta;
+        this.velocity.y += this.acceleration.y * Time.delta;
         this.acceleration = Vector.zero;
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
+        this.x += this.velocity.x * Time.delta;
+        this.y += this.velocity.y * Time.delta;
 
         this.velocity.setMagnitude(Math.min(this.velocity.magnitude, 10));
         this.velocity.x *= this.friction;
@@ -1093,7 +1121,8 @@ class World {
     }
 
     static update() {
-        World.time = requestAnimationFrame(World.update);
+        Time.frames = requestAnimationFrame(World.update);
+        Time.getDelta();
         Input.prep();
 
         Settings.update();
