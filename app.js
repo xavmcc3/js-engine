@@ -201,9 +201,8 @@ class MenuItem {
     static numMenuItems = 0; //
 
     graphics = null;
-    constructor(color, selectable = false) {
-        this.color = color ?? 0xff0000;
-        this.selectable = selectable; // TODO Make this derive from a different class instead
+    constructor() {
+        this.color = 0xff0000;
 
         this.y = 100 + MenuItem.numMenuItems * 25;
         this.x = 100;
@@ -224,14 +223,52 @@ class MenuItem {
         graphics.stage.addChild(this.graphics);
     }
 
-    render(selected) {
-        this.graphics.position.set(selected ? 125 : this.x, this.y);
-    }
-
-    input() { // TODO move this to only the selectables class
-
+    render() {
+        this.graphics.position.set(this.x, this.y);
     }
 }
+
+//#region Menu Items
+
+//#endregion
+
+//#region Selectables
+class Selectable extends MenuItem {
+    selected;
+    constructor() {
+        super();
+        this.color = 0x66cc00;
+    }
+
+    render() {
+        this.graphics.position.set(this.selected ? 125 : this.x, this.y);
+    }
+
+    input() {
+
+    }
+    
+    select() {
+        this.selected = true;
+    }
+
+    deselect() {
+        this.selected = false;
+    }
+}
+
+class Button extends Selectable {
+    constructor() {
+        super();
+        this.color = 0x0022ee;
+    }
+
+    input() {
+        if(Input.getKeyDown('Enter'))
+            console.log('cum');
+    }
+}
+//#endregion
 
 class Menu {
     static menus = [];
@@ -249,12 +286,14 @@ class Menu {
             menu.render();
         }
 
-        // only the most recently added 
-        // menu receives input
+        // NOTE only the most recently added 
+        // menu receives input because of this
+        // , which is bueno 👍
         Menu.menus.slice(-1)[0].input();
     }
 
 
+    selected = 0;
     constructor(name, ...items) {
         this.name = name;
         this.items = items ?? [];
@@ -267,17 +306,17 @@ class Menu {
     }
 
     start() {
-        this.selectables = [];
-        this.selected = 0;
-        
         console.log('starting menu \'' + this.name + '\''); //
+        
+        this.selectables = [];
         for(const item of this.items) {
-            if(item.selectable)
+            const prototype = item.constructor.prototype;
+            if(prototype instanceof Selectable || item.constructor === Selectable)
                 this.selectables.push(item);
             item.start();
         }
 
-        console.log('selectables: ', this.selectables);
+        this.select(0);
     }
 
     input() {
@@ -289,17 +328,23 @@ class Menu {
             this.increment(-1);
         }
 
-        this.selectables[this.selected].input();
+        this.selectables[this.selected]?.input();
     }
 
     render() {
         for(const item of this.items) {
-            item.render(this.selectables[this.selected] == item);
+            item.render();
         }
     }
 
     select(index) {
+        if(this.selectables.length < 1)
+            return;
+
+        this.selectables[this.selected]?.deselect();
+
         this.selected = Math.max(0, Math.min(this.selectables.length - 1, index));
+        this.selectables[this.selected].select();
     }
 
     increment(amount) {
@@ -307,13 +352,12 @@ class Menu {
     }
 }
 
+const sample = new Menu('sample 🥵🥵🥵');
 
-const sample = new Menu('sample');
+const s2b = new Button();
+const s4o = new Selectable();
 
-const blue = new MenuItem(0x001166, true);
-const green = new MenuItem(0x66cc00);
-
-sample.add(blue, green, new MenuItem(0xff0055, true), new MenuItem(0xaa0011), new MenuItem(0xff0055, true), new MenuItem(0xff0055, true));
+sample.add(s2b, s4o, new MenuItem(0xff0055, true), new Button(0xaa0011), new MenuItem(0xff0055, true), new MenuItem(0xff0055, true));
 
 Menu.add(sample);
 //#endregion
