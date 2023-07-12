@@ -1144,7 +1144,7 @@ class World {
         Input.update();
         Input.draw();
     }
-}
+}   
 
 // for simulating low framerates
 // setInterval(() => { //
