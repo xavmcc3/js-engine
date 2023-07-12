@@ -198,7 +198,37 @@ class Process {
 
 //#region Menus
 class MenuItem {
-    constructor() {
+    static numMenuItems = 0; //
+
+    graphics = null;
+    constructor(color, selectable = false) {
+        this.color = color ?? 0xff0000;
+        this.selectable = selectable; // TODO Make this derive from a different class instead
+
+        this.y = 100 + MenuItem.numMenuItems * 25;
+        this.x = 100;
+
+        MenuItem.numMenuItems++;
+    }
+
+    start() {
+        if(this.graphics != null)
+            this.graphics.destroy();
+
+        this.graphics = new PIXI.Graphics();
+
+        this.graphics.beginFill(this.color);
+        this.graphics.drawCircle(0, 0, 10);
+
+        this.graphics.endFill();
+        graphics.stage.addChild(this.graphics);
+    }
+
+    render(selected) {
+        this.graphics.position.set(selected ? 125 : this.x, this.y);
+    }
+
+    input() { // TODO move this to only the selectables class
 
     }
 }
@@ -225,8 +255,8 @@ class Menu {
     }
 
 
-    constructor(...items) {
-        console.log(items);
+    constructor(name, ...items) {
+        this.name = name;
         this.items = items ?? [];
     }
     
@@ -237,20 +267,54 @@ class Menu {
     }
 
     start() {
-        console.log('starting menu');
+        this.selectables = [];
+        this.selected = 0;
+        
+        console.log('starting menu \'' + this.name + '\''); //
+        for(const item of this.items) {
+            if(item.selectable)
+                this.selectables.push(item);
+            item.start();
+        }
+
+        console.log('selectables: ', this.selectables);
     }
 
     input() {
-        // console.log('receiving input');
+        if(Input.getKeyDown('ArrowDown')) {
+            this.increment(1);
+        }
+
+        if(Input.getKeyDown('ArrowUp')) {
+            this.increment(-1);
+        }
+
+        this.selectables[this.selected].input();
     }
 
     render() {
-        // console.log('rendering');
+        for(const item of this.items) {
+            item.render(this.selectables[this.selected] == item);
+        }
+    }
+
+    select(index) {
+        this.selected = Math.max(0, Math.min(this.selectables.length - 1, index));
+    }
+
+    increment(amount) {
+        this.select(this.selected + amount);
     }
 }
 
-const sample = new Menu(new MenuItem(), new MenuItem());
-sample.add(new MenuItem(), new MenuItem());
+
+const sample = new Menu('sample');
+
+const blue = new MenuItem(0x001166, true);
+const green = new MenuItem(0x66cc00);
+
+sample.add(blue, green, new MenuItem(0xff0055, true), new MenuItem(0xaa0011), new MenuItem(0xff0055, true), new MenuItem(0xff0055, true));
+
 Menu.add(sample);
 //#endregion
 
