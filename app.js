@@ -215,12 +215,16 @@ class MenuItem {
             this.graphics.destroy();
 
         this.graphics = new PIXI.Graphics();
+        this.initialize();
 
+        graphics.stage.addChild(this.graphics);
+    }
+
+    initialize() {
         this.graphics.beginFill(this.color);
         this.graphics.drawCircle(0, 0, 10);
 
         this.graphics.endFill();
-        graphics.stage.addChild(this.graphics);
     }
 
     render() {
@@ -229,7 +233,26 @@ class MenuItem {
 }
 
 //#region Menu Items
+class MenuText extends MenuItem {
+    constructor(content) {
+        super();
 
+        this.content = content ?? 'no text :(';
+    }
+
+    initialize() {
+        const fontSize = 20;
+        const text = new PIXI.Text(this.content, {
+            fontFamily: 'Arial',
+            fontSize: fontSize,
+            fill: 0xffffff,
+            align: 'left'
+        });
+
+        text.position.set(0, -fontSize / 2);
+        this.graphics.addChild(text);
+    }
+}
 //#endregion
 
 //#region Selectables
@@ -257,15 +280,38 @@ class Selectable extends MenuItem {
     }
 }
 
-class Button extends Selectable {
-    constructor() {
+class SelectableText extends Selectable {
+    constructor(content) {
         super();
+
+        this.content = content ?? "no selectable text :( :o=====8";
+    }
+
+    initialize() {
+        const fontSize = 20;
+        const text = new PIXI.Text(this.content, {
+            fontFamily: 'Arial',
+            fontSize: fontSize,
+            fill: 0xffffff,
+            align: 'left'
+        });
+
+        text.position.set(0, -fontSize / 2);
+        this.graphics.addChild(text);
+    }
+}
+
+class Button extends Selectable {
+    constructor(callback) {
+        super();
+
+        this.callback = callback ?? (() => {});
         this.color = 0x0022ee;
     }
 
     input() {
         if(Input.getKeyDown('Enter'))
-            console.log('cum');
+            this.callback();
     }
 }
 //#endregion
@@ -354,10 +400,12 @@ class Menu {
 
 const sample = new Menu('sample 🥵🥵🥵');
 
-const s2b = new Button();
+const s2b = new Button(() => {
+    console.log("8======> ~~~~~~~&");
+});
 const s4o = new Selectable();
 
-sample.add(s2b, s4o, new MenuItem(0xff0055, true), new Button(0xaa0011), new MenuItem(0xff0055, true), new MenuItem(0xff0055, true));
+sample.add(s2b, s4o, new MenuText('say gex'), new MenuItem(), new MenuItem(), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
 
 Menu.add(sample);
 //#endregion
