@@ -197,8 +197,9 @@ class Process {
 // #endregion
 
 //#region Menus
+// TODO Also make Graph Menus (on a new branch)
 class MenuItem {
-    static numMenuItems = 0; //
+    static numMenuItems = 0; // 
 
     graphics = null;
     constructor() {
@@ -229,6 +230,12 @@ class MenuItem {
 
     render() {
         this.graphics.position.set(this.x, this.y);
+    }
+
+    position(x, y) {
+        this.x = x ?? this.x;
+        this.y = y ?? this.y;
+        return this;
     }
 }
 
@@ -264,7 +271,7 @@ class Selectable extends MenuItem {
     }
 
     render() {
-        this.graphics.position.set(this.selected ? 125 : this.x, this.y);
+        this.graphics.position.set(this.selected ? this.x + 25 : this.x, this.y);
     }
 
     input() {
@@ -307,6 +314,11 @@ class Button extends Selectable {
 
         this.callback = callback ?? (() => {});
         this.color = 0x0022ee;
+    }
+
+    render() {
+        this.graphics.tint = this.selected ? 0xff0000 : 0xffffff;
+        this.graphics.position.set(this.x, this.y);
     }
 
     input() {
@@ -398,14 +410,15 @@ class Menu {
     }
 }
 
-const sample = new Menu('sample 🥵🥵🥵');
+const sample = new Menu('🥵🥵🥵');
 
 const s2b = new Button(() => {
     console.log("8======> ~~~~~~~&");
 });
 const s4o = new Selectable();
 
-sample.add(s2b, s4o, new MenuText('say gex'), new MenuItem(), new MenuItem(), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
+sample.add(s2b, s4o, new MenuText('say gex').position(300, 200), new MenuItem(), new MenuItem(), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
+console.log(s2b);
 
 Menu.add(sample);
 //#endregion
