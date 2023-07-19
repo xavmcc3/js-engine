@@ -1,20 +1,11 @@
 // #region Graphics
-const canvas = document.querySelector('canvas') ?? document.createElement('canvas');
-const ctx = canvas.getContext('2d');
-
 const pixijsParent = document.querySelector('#pixijs');
 const graphics = new PIXI.Application({
     backgroundColor: 0x5E5E5E,
     resizeTo: pixijsParent
 });
-pixijsParent.appendChild(graphics.view);
 
-addEventListener('resize', resize);
-function resize() {
-    let rect = canvas.parentElement.getBoundingClientRect();
-    canvas.height = rect.height;
-    canvas.width = rect.width;
-}
+pixijsParent.appendChild(graphics.view);
 // #endregion
 
 //#region Utils
@@ -171,8 +162,8 @@ addEventListener('mousemove', e => {
     Input.x = e.clientX;
     Input.y = e.clientY;
 
-    canvas.style.backgroundPositionX = (Input.x / canvas.width + canvas.width / 8) * Input.sensitivity + 'px';
-    canvas.style.backgroundPositionY = (Input.y / canvas.height + canvas.height / 8) * Input.sensitivity + 'px';
+    // canvas.style.backgroundPositionX = (Input.x / canvas.width + canvas.width / 8) * Input.sensitivity + 'px';
+    // canvas.style.backgroundPositionY = (Input.y / canvas.height + canvas.height / 8) * Input.sensitivity + 'px';
 });
 addEventListener('contextmenu', e => {
     e.preventDefault();
@@ -801,105 +792,6 @@ class Entity {
     }
 }
 
-//#region Input Debugging
-class MouseTracker extends Entity {
-    constructor(x, y) {
-        super(x ?? 0, y ?? 0);
-    }
-
-    start() {
-        this.graphics.beginFill(0xff0000);
-        this.graphics.drawCircle(0, 0, 5);
-        graphics.stage.addChild(this.graphics);
-    }
-
-    update() {
-        this.x = Input.x;
-        this.y = Input.y;
-    }
-
-    ondraw() {
-        ctx.beginPath();
-        ctx.lineWidth = 1;
-        ctx.fillStyle = '#ff0000';
-        ctx.strokeStyle = '#14238750';
-
-        ctx.moveTo(Input.x, 0);
-        ctx.lineTo(Input.x, canvas.height);
-
-        ctx.moveTo(0, Input.y);
-        ctx.lineTo(canvas.width, Input.y);
-
-        ctx.arc(Input.x, Input.y, 3, 0, Math.PI*2);
-        ctx.stroke();
-        ctx.fill();
-    }
-}
-
-class GamepadTracker extends Entity {
-    constructor(index, x, y) {
-        super(x ?? 0, y ?? 0);
-        this.index = index;
-    }
-
-    ondraw() {
-        throw new Error("Forgot to add support for pixijs drawing the gamepad lol.");
-        const gamepad = navigator.getGamepads()[this.index];
-        if(gamepad == null)
-            return;
-
-        // ctx.beginPath();
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = '#000000';
-
-        const axes = Math.ceil(gamepad.axes.length/2);
-        const w = canvas.width / Input.gamepadCount;
-        const aw = Math.min(w, 300);
-        const ah = 40;
-
-        const x = (canvas.width / (Input.gamepadCount) * (this.index+1)) - (w);
-        // ctx.rect(x + w/2 - aw/2, canvas.height / 2 - ah, aw, ah*2);
-        // ctx.stroke();
-
-        for(let i = 0; i < gamepad.axes.length; i += 2) {
-            const r = aw / axes/2;
-            const tr = Math.min(20, r);
-            const axis = gamepad.axes[i];
-            const cx = x + ((i/2) * r * 2) + r + (w/2 - aw/2);
-
-            let ay = 0;
-            if(i < gamepad.axes.length - 1)
-                ay = gamepad.axes[i+1];
-
-            ctx.beginPath();
-            ctx.arc(cx, canvas.height / 2, tr, 0, Math.PI * 2);
-            ctx.stroke();
-
-            ctx.beginPath();
-            ctx.arc(cx + (axis * tr), canvas.height / 2 + (ay*tr), 5, 0, Math.PI * 2);
-            ctx.fillStyle = '#ff0000';
-            ctx.fill();
-        }
-
-        const h = 20;
-        const buttonCount = gamepad.buttons.length;
-        for(const index in gamepad.buttons) {
-            const button = gamepad.buttons[index];
-
-            const r = aw / buttonCount/2;
-            const tr = Math.min(7, r);
-            const cx = x + ((index/2) * r * 4) + r + (w/2 - aw/2);
-
-            ctx.beginPath();
-            ctx.arc(cx, canvas.height / 2 - Math.min(20, aw / axes/2) - r - 15 + (Math.cos(2*Math.PI*(1/buttonCount)*index) * h + 40), tr, 0, Math.PI * 2);
-            ctx.fillStyle = '#ff0000' + hexMap[Math.floor(button.value*(hexMap.length-1))].toString().repeat(2);
-            ctx.stroke();
-            ctx.fill();
-        }
-    }
-}
-//#endregion
-
 //#region Game Entities
 class Agent extends Entity {
     acceleration = Vector.zero;
@@ -997,18 +889,18 @@ class Agent extends Entity {
 
 
         if(this.x < 0) {
-            this.x = canvas.width;
+            this.x = graphics.view.width;
         }
 
-        if(this.x > canvas.width) {
+        if(this.x > graphics.view.width) {
             this.x = 0;
         }
 
         if(this.y < 0) {
-            this.y = canvas.height;
+            this.y = graphics.view.height;
         }
 
-        if(this.y > canvas.height) {
+        if(this.y > graphics.view.height) {
             this.y = 0;
         }
     }
@@ -1108,7 +1000,6 @@ class World {
     static time;
 
     static start(setup = () => {}) {
-        resize();
         setup();
 
         Settings.setup();
@@ -1129,7 +1020,6 @@ class World {
         Sequencer.update(); // maybe after other things
 
         World.entities.forEach(entity => entity.update());
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         World.entities.forEach(entity => entity.lateupdate());
         World.entities.forEach(entity => entity.draw());
@@ -1157,7 +1047,7 @@ class World {
 World.start();
 
 const main = new Scene(() => {
-    World.instantiate(new Circle(canvas.width/2, canvas.height/2));
-    World.instantiate(new Agent(canvas.width/2, canvas.height/2));
+    World.instantiate(new Circle(graphics.view.width/2, graphics.view.height/2));
+    World.instantiate(new Agent(graphics.view.width/2, graphics.view.height/2));
 });
 Scene.load(main);
