@@ -214,348 +214,243 @@ class Process {
 // #endregion
 
 //#region Menus
+// TODO Also make Graph Menus (on a new branch)
 class MenuItem {
-    selected = false;
-    children = [];
-    element;
+    graphics = null;
+    constructor() {
+        this.color = 0xff0000;
 
-    append(root) {
-        const r = root ?? document.body;
-        r.appendChild(this.element);
-        return this.element;
+        this.y = 100;
+        this.x = 100;
     }
 
-    setAttribute(key, value) {
-        this.element.setAttribute(key, value);
+    start(parent) {
+        if(this.graphics != null)
+            this.graphics.destroy();
+
+        this.graphics = new PIXI.Graphics();
+        this.initialize();
+
+        parent.graphics.addChild(this.graphics);
     }
 
-    getAttribute(key) {
-        return this.element.getAttribute(key);
+    initialize() {
+        this.graphics.beginFill(this.color);
+        this.graphics.drawCircle(0, 0, 10);
+
+        this.graphics.endFill();
     }
 
-    setStyle(key, value) {
-        this.element.style[key] = value;
+    render() {
+        this.graphics.position.set(this.x, this.y);
     }
 
-    getStyle(key) {
-        return getComputedStyle(this.element)[key];
-    }
-
-    add(menuitem) {
-        this.children.push(menuitem);
-        this.element.appendChild(menuitem.element);
-        return menuitem;
-    }
-}
-
-
-class Menu extends MenuItem {
-    selected = null;
-    element = (() => {
-        const element = document.createElement('div');
-        return element;
-    })();
-
-    static create(root) {
-        const menu = new Menu();
-        menu.append(root);
-        return menu;
-    }
-
-    select(element) {
-        if(!this.children.includes(element))
-            return;
-
-        if(this.selected != null)
-            this.selected?.deselect();
-
-        element.select();
-        this.selected = element;
-        return element;
-    }
-
-    deselect() {
-        throw new Error('fuck balls');
+    position(x, y) {
+        this.x = x ?? this.x;
+        this.y = y ?? this.y;
+        return this;
     }
 }
 
+//#region Menu Items
+class MenuBlank extends MenuItem {
+    constructor() {
+        super();
+    }
 
-class MenuGroup extends MenuItem {
-    element = (() => {
-        const element = document.createElement('fieldset');
-        return element;
-    })();
+    initialize() {}
+
+    start() {}
+
+    render() {}
 }
 
 class MenuText extends MenuItem {
-    element = (() => {
-        const element = document.createElement('p');
-        return element;
-    })();
-
-    constructor(text) {
+    constructor(content) {
         super();
-        this.element.innerText = text ?? "";
-    }
-}
 
-class MenuHeader extends MenuItem {
-    element = (() => {
-        const element = document.createElement('h2');
-        return element;
-    })();
-
-    constructor(text) {
-        super();
-        this.element.innerText = text ?? "";
-    }
-}
-
-
-class Selectable extends MenuItem {
-    select() {
-        this.selected = true;
-        this.element.classList.add('selected');
+        this.content = content ?? 'no text :(';
     }
 
-    deselect() {
-        this.selected = false;
-        this.element.classList.remove('selected');
-    }
-}
-
-
-class MenuButton extends Selectable {
-    element = (() => {
-        const element = document.createElement('button');
-        element.addEventListener('click', e => {
-            this.onclick(e);
-        });
-        return element;
-    })();
-
-    constructor(text, callback) {
-        super();
-        this.element.innerText = text ?? "";
-        this.callback = callback ?? (() => {});
-    }
-
-    setCallback(callback) {
-        this.callback = callback ?? (() => {});
-    }
-
-    onclick(e) {
-        this.callback(e);
-    }
-}
-
-class MenuToggle extends Selectable {
-    value = true;
-    element = (() => {
-        const label = document.createElement('label');
-        label.classList.add('checkbox');
-
-        const checkbox = document.createElement('input');
-        checkbox.setAttribute('type', 'checkbox');
-        checkbox.addEventListener('input', e => {
-            this.oninput(e.target.checked);
+    initialize() {
+        const fontSize = 20;
+        const text = new PIXI.Text(this.content, {
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fontSize: fontSize,
+            fill: 0x000000,
+            align: 'left',
         });
 
-        const span = document.createElement('span');
-        const text = document.createElement('p');
-
-        label.appendChild(checkbox);
-        label.appendChild(span);
-        label.appendChild(text);
-        return label;
-    })();
-
-    constructor(text, callback) {
-        super();
-        this.element.querySelector('p').innerText = text ?? "";
-        this.callback = callback ?? (() => {});
-    }
-
-    setCallback(callback) {
-        this.callback = callback ?? (() => {});
-    }
-
-    oninput(value) {
-        this.value = value;
-        this.callback(value);
-    }
-
-    set(on) {
-        this.value = on;
-        this.element.querySelector('input').checked = on;
-        return this.value;
-    }
-
-    toggle() {
-        this.set(!this.value);
-        return this.value;
-    }
-}
-
-class MenuRadio extends Selectable {
-    value = true;
-    element = (() => {
-        const label = document.createElement('label');
-        label.classList.add('radio');
-
-        const radio = document.createElement('input');
-        radio.setAttribute('type', 'radio');
-        radio.addEventListener('input', e => {
-            this.oninput(e.target.checked);
-        });
-
-        const span = document.createElement('span');
-        const text = document.createElement('p');
-
-        label.appendChild(radio);
-        label.appendChild(span);
-        label.appendChild(text);
-        return label;
-    })();
-
-    constructor(text, name, callback) {
-        super();
-        this.element.querySelector('p').innerText = text ?? "";
-        this.element.querySelector('input').name = name ?? "";
-        this.callback = callback ?? (() => {});
-    }
-}
-
-class MenuDropdown extends Selectable {
-    value;
-    element = (() => {
-        const label = document.createElement('label');
-        label.classList.add('dropdown');
-
-        const text = document.createElement('span');
-        text.classList.add('text');
-
-        const span = document.createElement('span');
-        span.classList.add('dropdown');
-
-        const select = document.createElement('select');
-        select.onchange = e => {
-            this.onchange(e);
-        }
-
-
-        label.appendChild(text);
-        label.appendChild(span);
-        label.appendChild(select);
-        return label;
-    })();
-
-    constructor(text, items, callback) {
-        super();
-        this.element.querySelector('.text').innerText = (text ?? "") + " ";
-        for(const item of items) {
-            this.addItem(item);
-        }
-
-        this.value = this.element.querySelector('select').value;
-        this.callback = callback ?? (() => {});
-    }
-
-    onchange(e) {
-        this.value = e.target.value;
-        this.callback(e.target.value);
-    }
-
-    addItem(item) {
-        const root = this.root ?? this.element.querySelector('select');
-        const option = document.createElement('option');
-        option.innerText = item;
-        root.appendChild(option);
-        this.root = root;
-    }
-
-    removeItem(item) {
-        const root = this.root ?? this.element.querySelector('select');
-        for(let i = root.childElementCount - 1; i >= 0; i--) {
-            const option = root.childNodes[i];
-            if(option.innerText == item) 
-                root.removeChild(option);
-        }
-
-        this.value = root.value;
-        this.root = root;
-    }
-
-    select(item) {
-        const root = this.root ?? this.element.querySelector('select');
-
-        if(typeof item == 'number' && item < root.childElementCount)
-            root.selectedIndex = item;
-        else {
-            for(let i = 0; i < root.childElementCount; i++) {
-                if(root.childNodes[i].innerText != item) 
-                    continue;
-
-                root.selectedIndex = i;
-                break;
-            }
-        }
-
-        this.value = root.value;
-        this.root = root;
+        text.position.set(0, -fontSize / 2);
+        this.graphics.addChild(text);
     }
 }
 //#endregion
 
-//#region Settings
-// NOTE this shit doesn't work when there's text interrupting 
-// the buttons so... idk
-class Settings {
-    static menu = Menu.create();
-    static selectedIndex = 0;
-    
-    static setup() {
-        this.menu.add(new MenuHeader("Settings Menu"));
-        this.menu.add(new MenuText("text"));
-        this.menu.add(new MenuButton("button"));
-        this.menu.add(new MenuToggle("checkbox"));
-
-        this.increment(0);
+//#region Selectables
+class Selectable extends MenuItem {
+    selected;
+    selection;
+    constructor() {
+        super();
+        this.color = 0x66cc00;
     }
 
-    static increment(n) {
-        this.selectedIndex += n;
-        this.selectedIndex = Math.min(this.menu.children.length - 1, Math.max(this.selectedIndex, 0));
-
-        let i = 0;
-        let increment = Math.sign(n);
-        if(increment == 0)
-            increment = 1;
-        const len = this.menu.children.length ?? 0;
-        let constructor = this.menu.children[this.selectedIndex].constructor;
-        while(!(constructor.prototype instanceof Selectable)) {
-            i++;
-            if(i >= len)
-                break;
-                
-            this.selectedIndex += increment;
-
-            if(this.selectedIndex >= len - 1 || this.selectedIndex <= 0) {
-                increment *= -1;
-                this.selectedIndex += increment;
-                continue;
-            }
-            
-            constructor = this.menu.children[this.selectedIndex].constructor;
+    render() {
+        if(this.selected && this.selection == null) {
+            this.graphicselect();
+        } else if(this.selection != null && !this.selected) {
+            this.selection.destroy();
+            this.selection = null;
         }
-        
-        if(!(this.menu.children[this.selectedIndex].constructor.prototype instanceof Selectable))
-            return;
+    
+        this.graphics.position.set(this.x, this.y);
+    }
 
-        this.menu.select(this.menu.children[this.selectedIndex]);
+    graphicselect() {
+        const textWidth = this.text.getLocalBounds().width;
+        const graphics = new PIXI.Graphics();
+
+        const arrowHeight = 14;
+        const arrowWidth = 5;
+        const arrowY = -5;
+
+        graphics.beginFill(0x000000, 1);
+        graphics.moveTo(-15, arrowY);
+        graphics.lineTo(-arrowWidth, arrowY + arrowHeight / 2);
+        graphics.lineTo(-15, arrowY + arrowHeight);
+        graphics.endFill();
+
+
+        graphics.beginFill(0x000000, 1);
+        graphics.moveTo(textWidth + 15, arrowY);
+        graphics.lineTo(textWidth + arrowWidth, arrowY + arrowHeight / 2);
+        graphics.lineTo(textWidth + 15, arrowY + arrowHeight);
+        graphics.endFill();
+
+        this.graphics.addChild(graphics);
+        this.selection = graphics;
+    }
+
+    input() {
+
+    }
+    
+    select() {
+        this.selected = true;
+    }
+
+    deselect() {
+        this.selected = false;
+    }
+}
+
+class SelectableText extends Selectable {
+    constructor(content) {
+        super();
+
+        this.content = content ?? "no selectable text :( :o=====8";
+    }
+
+    text;
+    initialize() {
+        const fontSize = 20;
+        const text = new PIXI.Text(this.content, {
+            fontFamily: 'Arial',
+            fontWeight: 'bold',
+            fontSize: fontSize,
+            fill: 0x000000,
+            align: 'left'
+        });
+
+        text.position.set(0, -fontSize / 2);
+        this.graphics.addChild(text);
+        this.text = text;
+    }
+}
+
+class Button extends SelectableText {
+    constructor(content, callback) {
+        super();
+
+        this.callback = callback ?? (() => {});
+        this.content = content ?? "button with no text :o";
+    }
+
+    input() {
+        if(Input.getKeyDown('Enter'))
+            this.callback();
+    }
+}
+//#endregion
+
+// NOTE Not destroing the graphics objects of the menu items
+// is basically a memory leak, so idfk. It might not be tho
+// TODO add support for exit animations
+// and immediate destruction options
+class Menu {
+    static menus = []; // NOTE this is the list of ACTIVE menus
+    static add(menu) {
+        Menu.menus.push(menu);
+        menu.start();
+    }
+
+    static remove(menu) {
+        const index = Menu.menus.indexOf(menu);
+        menu.destroy();
+
+        Menu.menus.splice(index, 1);
     }
 
     static update() {
+        for(const menu of Menu.menus) {
+            menu.render();
+        }
+
+        // NOTE only the most recently added 
+        // menu receives input because of this
+        // , which is bueno 👍
+        Menu.menus.slice(-1)[0].input();
+    }
+
+
+    graphics;
+    selected = 0;
+    constructor(name, x, y, ...items) {
+        this.x = x ?? 0;
+        this.y = y ?? 0;
+
+        this.name = name;
+        this.items = items ?? [];
+    }
+    
+    add(...items) {
+        for(const item of items) {
+            this.items.push(item);
+        }
+    }
+
+    start() {        
+        this.graphics = new PIXI.Graphics();
+        
+        let index = 0;
+        this.selectables = [];
+        for(const item of this.items) {
+            const prototype = item.constructor.prototype;
+            if(prototype instanceof Selectable || item.constructor === Selectable)
+            this.selectables.push(item);
+            
+            this.setup(index, item);
+            item.start(this);
+            index++;
+        }
+        
+        graphics.stage.addChild(this.graphics);
+        this.select(0);
+    }
+
+    input() {
         if(Input.getKeyDown('ArrowDown')) {
             this.increment(1);
         }
@@ -563,8 +458,81 @@ class Settings {
         if(Input.getKeyDown('ArrowUp')) {
             this.increment(-1);
         }
+
+        this.selectables[this.selected]?.input();
+    }
+
+    destroy() {
+        this.graphics.destroy();
+    }
+
+    render() {
+        this.tick();
+        this.graphics.position.set(this.x, this.y);
+
+        for(const item of this.items) {
+            item.render();
+        }
+    } 
+
+    select(index) {
+        if(this.selectables.length < 1)
+            return;
+
+        this.selectables[this.selected]?.deselect();
+
+        this.selected = Math.max(0, Math.min(this.selectables.length - 1, index));
+        this.selectables[this.selected].select();
+    }
+
+    increment(amount) {
+        this.select(this.selected + amount);
+    }
+    
+    tick() {}
+
+    setup(index, item) {}
+}
+
+//#region Menu Layouts
+class ScrollingMenu extends Menu {
+    constructor(name, x, y, smoothing, ...items) {
+        super(name, x, y, ...items);
+        this.smoothing = smoothing ?? 10;
+        this.startY = y ?? 0;
+    }
+
+    tick() {
+        const target = this.selectables[this.selected].y * -1;
+        this.y = this.y + (target + this.startY - this.y) / this.smoothing;
+    }
+
+    setup(index, item) {
+        item.y= index * 25;
     }
 }
+//#endregion
+
+const sample = new ScrollingMenu('🥵🥵🥵', 100, 200, 12);
+const submenu = new ScrollingMenu('🍆💦', 100, 200);
+
+const s2b = new Button('button', () => {
+    console.log("button pressed");
+});
+const s4o = new Button('next', () => {
+    Menu.remove(sample);
+    Menu.add(submenu);
+});
+
+const s8c = new Button('back', () => {
+    Menu.remove(submenu);
+    Menu.add(sample);
+});
+
+sample.add(new MenuText('UI Menu'), new MenuBlank(), s2b, new SelectableText('selectable text'), s4o);
+submenu.add(new MenuText('Submenu'), new MenuBlank(), new SelectableText('it is what it is'), s8c);
+
+Menu.add(sample);
 //#endregion
 
 //#region Scenes
@@ -994,6 +962,8 @@ class Circle extends Entity {
 }
 //#endregion
 
+// NOTE processes and menus might get 
+// messed up on scene changes
 class World {
     static gamepads = {};
     static entities = [];
@@ -1002,7 +972,6 @@ class World {
     static start(setup = () => {}) {
         setup();
 
-        Settings.setup();
         World.update();
     }
 
@@ -1016,8 +985,9 @@ class World {
         Time.getDelta();
         Input.prep();
 
-        Settings.update();
         Sequencer.update(); // maybe after other things
+
+        Menu.update();
 
         World.entities.forEach(entity => entity.update());
 
