@@ -199,16 +199,16 @@ class Process {
 //#region Menus
 // TODO Also make Graph Menus (on a new branch)
 class MenuItem {
-    static numMenuItems = 0; // 
+    //static numMenuItems = 0; // 
 
     graphics = null;
     constructor() {
         this.color = 0xff0000;
 
-        this.y = 100 + MenuItem.numMenuItems * 25;
+        this.y = 100;// + MenuItem.numMenuItems * 25;
         this.x = 100;
 
-        MenuItem.numMenuItems++;
+        //MenuItem.numMenuItems++;
     }
 
     start(parent) {
@@ -373,12 +373,16 @@ class Menu {
         
         this.graphics = new PIXI.Graphics();
         
+        let index = 0;
         this.selectables = [];
         for(const item of this.items) {
             const prototype = item.constructor.prototype;
             if(prototype instanceof Selectable || item.constructor === Selectable)
             this.selectables.push(item);
+            
+            this.setup(index, item);
             item.start(this);
+            index++;
         }
         
         graphics.stage.addChild(this.graphics);
@@ -421,6 +425,8 @@ class Menu {
     }
     
     tick() {}
+
+    setup(index, item) {}
 }
 
 //#region Menus
@@ -434,6 +440,10 @@ class ScrollingMenu extends Menu {
     tick() {
         const target = this.selectables[this.selected].y * -1;
         this.y = this.y + (target + this.startY - this.y) / this.smoothing;
+    }
+
+    setup(index, item) {
+        item.y= index * 25;
     }
 }
 //#endregion
