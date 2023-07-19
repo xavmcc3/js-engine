@@ -211,14 +211,14 @@ class MenuItem {
         MenuItem.numMenuItems++;
     }
 
-    start() {
+    start(parent) {
         if(this.graphics != null)
             this.graphics.destroy();
 
         this.graphics = new PIXI.Graphics();
         this.initialize();
 
-        graphics.stage.addChild(this.graphics);
+        parent.graphics.addChild(this.graphics);
     }
 
     initialize() {
@@ -328,6 +328,7 @@ class Button extends Selectable {
 }
 //#endregion
 
+// TODO add support for multiple and layered menus
 class Menu {
     static menus = [];
     static add(menu) {
@@ -336,7 +337,7 @@ class Menu {
     }
 
     static remove(menu) {
-
+        // TODO finish.
     }
 
     static update() {
@@ -351,8 +352,12 @@ class Menu {
     }
 
 
+    graphics;
     selected = 0;
-    constructor(name, ...items) {
+    constructor(name, x, y, ...items) {
+        this.x = x ?? 0;
+        this.y = y ?? 0;
+
         this.name = name;
         this.items = items ?? [];
     }
@@ -366,14 +371,17 @@ class Menu {
     start() {
         console.log('starting menu \'' + this.name + '\''); //
         
+        this.graphics = new PIXI.Graphics();
+        
         this.selectables = [];
         for(const item of this.items) {
             const prototype = item.constructor.prototype;
             if(prototype instanceof Selectable || item.constructor === Selectable)
-                this.selectables.push(item);
-            item.start();
+            this.selectables.push(item);
+            item.start(this);
         }
-
+        
+        graphics.stage.addChild(this.graphics);
         this.select(0);
     }
 
@@ -390,10 +398,13 @@ class Menu {
     }
 
     render() {
+        this.tick();
+        this.graphics.position.set(this.x, this.y);
+
         for(const item of this.items) {
             item.render();
         }
-    }
+    } 
 
     select(index) {
         if(this.selectables.length < 1)
@@ -408,17 +419,33 @@ class Menu {
     increment(amount) {
         this.select(this.selected + amount);
     }
+    
+    tick() {}
 }
 
-const sample = new Menu('🥵🥵🥵');
+//#region Menus
+class ScrollingMenu extends Menu {
+    constructor(name, x, y, smoothing, ...items) {
+        super(name, x, y, ...items);
+        this.smoothing = smoothing ?? 10;
+        this.startY = y ?? 0;
+    }
+
+    tick() {
+        const target = this.selectables[this.selected].y * -1;
+        this.y = this.y + (target + this.startY - this.y) / this.smoothing;
+    }
+}
+//#endregion
+
+const sample = new ScrollingMenu('🥵🥵🥵', 100, 200, 12);
 
 const s2b = new Button(() => {
     console.log("8======> ~~~~~~~&");
 });
 const s4o = new Selectable();
 
-sample.add(s2b, s4o, new MenuText('say gex').position(300, 200), new MenuItem(), new MenuItem(), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
-console.log(s2b);
+sample.add(s2b, s4o, new MenuText('say gex').position(0, 0), new MenuItem(), new MenuItem(), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
 
 Menu.add(sample);
 //#endregion
