@@ -449,13 +449,23 @@ class ScrollingMenu extends Menu {
 //#endregion
 
 const sample = new ScrollingMenu('🥵🥵🥵', 100, 200, 12);
+const submenu = new ScrollingMenu('🍆💦', 100, 200);
 
 const s2b = new Button(() => {
     console.log("8======> ~~~~~~~&");
 });
-const s4o = new Selectable();
+const s4o = new Button(() => {
+    Menu.remove(sample);
+    Menu.add(submenu);
+});
+
+const s8c = new Button(() => {
+    Menu.remove(submenu);
+    Menu.add(sample);
+});
 
 sample.add(s2b, s4o, new MenuText('say gex'), new MenuItem(), new MenuItem().position(0, 0), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
+submenu.add(new MenuText('cool beans'), s8c, new MenuItem(), new SelectableText('it is what it is'), new MenuItem(), new MenuItem());
 
 Menu.add(sample);
 //#endregion
