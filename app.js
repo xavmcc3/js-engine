@@ -445,7 +445,7 @@ const s2b = new Button(() => {
 });
 const s4o = new Selectable();
 
-sample.add(s2b, s4o, new MenuText('say gex').position(0, 0), new MenuItem(), new MenuItem(), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
+sample.add(s2b, s4o, new MenuText('say gex'), new MenuItem(), new MenuItem().position(0, 0), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
 
 Menu.add(sample);
 //#endregion
