@@ -199,16 +199,12 @@ class Process {
 //#region Menus
 // TODO Also make Graph Menus (on a new branch)
 class MenuItem {
-    //static numMenuItems = 0; // 
-
     graphics = null;
     constructor() {
         this.color = 0xff0000;
 
-        this.y = 100;// + MenuItem.numMenuItems * 25;
+        this.y = 100;
         this.x = 100;
-
-        //MenuItem.numMenuItems++;
     }
 
     start(parent) {
@@ -240,6 +236,18 @@ class MenuItem {
 }
 
 //#region Menu Items
+class MenuBlank extends MenuItem {
+    constructor() {
+        super();
+    }
+
+    initialize() {}
+
+    start() {}
+
+    render() {}
+}
+
 class MenuText extends MenuItem {
     constructor(content) {
         super();
@@ -251,9 +259,10 @@ class MenuText extends MenuItem {
         const fontSize = 20;
         const text = new PIXI.Text(this.content, {
             fontFamily: 'Arial',
+            fontWeight: 'bold',
             fontSize: fontSize,
-            fill: 0xffffff,
-            align: 'left'
+            fill: 0x000000,
+            align: 'left',
         });
 
         text.position.set(0, -fontSize / 2);
@@ -265,13 +274,46 @@ class MenuText extends MenuItem {
 //#region Selectables
 class Selectable extends MenuItem {
     selected;
+    selection;
     constructor() {
         super();
         this.color = 0x66cc00;
     }
 
     render() {
-        this.graphics.position.set(this.selected ? this.x + 25 : this.x, this.y);
+        if(this.selected && this.selection == null) {
+            this.graphicselect();
+        } else if(this.selection != null && !this.selected) {
+            this.selection.destroy();
+            this.selection = null;
+        }
+    
+        this.graphics.position.set(this.x, this.y);
+    }
+
+    graphicselect() {
+        const textWidth = this.text.getLocalBounds().width;
+        const graphics = new PIXI.Graphics();
+
+        const arrowHeight = 14;
+        const arrowWidth = 5;
+        const arrowY = -5;
+
+        graphics.beginFill(0x000000, 1);
+        graphics.moveTo(-15, arrowY);
+        graphics.lineTo(-arrowWidth, arrowY + arrowHeight / 2);
+        graphics.lineTo(-15, arrowY + arrowHeight);
+        graphics.endFill();
+
+
+        graphics.beginFill(0x000000, 1);
+        graphics.moveTo(textWidth + 15, arrowY);
+        graphics.lineTo(textWidth + arrowWidth, arrowY + arrowHeight / 2);
+        graphics.lineTo(textWidth + 15, arrowY + arrowHeight);
+        graphics.endFill();
+
+        this.graphics.addChild(graphics);
+        this.selection = graphics;
     }
 
     input() {
@@ -294,31 +336,29 @@ class SelectableText extends Selectable {
         this.content = content ?? "no selectable text :( :o=====8";
     }
 
+    text;
     initialize() {
         const fontSize = 20;
         const text = new PIXI.Text(this.content, {
             fontFamily: 'Arial',
+            fontWeight: 'bold',
             fontSize: fontSize,
-            fill: 0xffffff,
+            fill: 0x000000,
             align: 'left'
         });
 
         text.position.set(0, -fontSize / 2);
         this.graphics.addChild(text);
+        this.text = text;
     }
 }
 
-class Button extends Selectable {
-    constructor(callback) {
+class Button extends SelectableText {
+    constructor(content, callback) {
         super();
 
         this.callback = callback ?? (() => {});
-        this.color = 0x0022ee;
-    }
-
-    render() {
-        this.graphics.tint = this.selected ? 0xff0000 : 0xffffff;
-        this.graphics.position.set(this.x, this.y);
+        this.content = content ?? "button with no text :o";
     }
 
     input() {
@@ -328,7 +368,10 @@ class Button extends Selectable {
 }
 //#endregion
 
-// TODO add support for multiple and layered menus
+// NOTE Not destroing the graphics objects of the menu items
+// is basically a memory leak, so idfk. It might not be tho
+// TODO add support for exit animations
+// and immediate destruction options
 class Menu {
     static menus = []; // NOTE this is the list of ACTIVE menus
     static add(menu) {
@@ -371,9 +414,7 @@ class Menu {
         }
     }
 
-    start() {
-        console.log('starting menu \'' + this.name + '\''); //
-        
+    start() {        
         this.graphics = new PIXI.Graphics();
         
         let index = 0;
@@ -458,21 +499,21 @@ class ScrollingMenu extends Menu {
 const sample = new ScrollingMenu('🥵🥵🥵', 100, 200, 12);
 const submenu = new ScrollingMenu('🍆💦', 100, 200);
 
-const s2b = new Button(() => {
-    console.log("8======> ~~~~~~~&");
+const s2b = new Button('button', () => {
+    console.log("button pressed");
 });
-const s4o = new Button(() => {
+const s4o = new Button('next', () => {
     Menu.remove(sample);
     Menu.add(submenu);
 });
 
-const s8c = new Button(() => {
+const s8c = new Button('back', () => {
     Menu.remove(submenu);
     Menu.add(sample);
 });
 
-sample.add(s2b, s4o, new MenuText('say gex'), new MenuItem(), new MenuItem().position(0, 0), new Button(), new MenuItem(), new SelectableText('8====> 🍆💦'), new MenuItem());
-submenu.add(new MenuText('cool beans'), s8c, new MenuItem(), new SelectableText('it is what it is'), new MenuItem(), new MenuItem());
+sample.add(new MenuText('UI Menu'), new MenuBlank(), s2b, new SelectableText('selectable text'), s4o);
+submenu.add(new MenuText('Submenu'), new MenuBlank(), new SelectableText('it is what it is'), s8c);
 
 Menu.add(sample);
 //#endregion
