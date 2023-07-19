@@ -330,14 +330,17 @@ class Button extends Selectable {
 
 // TODO add support for multiple and layered menus
 class Menu {
-    static menus = [];
+    static menus = []; // NOTE this is the list of ACTIVE menus
     static add(menu) {
         Menu.menus.push(menu);
         menu.start();
     }
 
     static remove(menu) {
-        // TODO finish.
+        const index = Menu.menus.indexOf(menu);
+        menu.destroy();
+
+        Menu.menus.splice(index, 1);
     }
 
     static update() {
@@ -399,6 +402,10 @@ class Menu {
         }
 
         this.selectables[this.selected]?.input();
+    }
+
+    destroy() {
+        this.graphics.destroy();
     }
 
     render() {
