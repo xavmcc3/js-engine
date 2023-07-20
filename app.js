@@ -1048,8 +1048,8 @@ class Particle extends Entity {
     }
 
     update() {
-        this.x += this.velocity.x;
-        this.y += this.velocity.y;
+        this.x += this.velocity.x * Time.delta;
+        this.y += this.velocity.y * Time.delta;
         this.velocity.setMagnitude(this.speed * this.life);
 
         this.life -= this.increment;
