@@ -2,8 +2,6 @@
     precision highp float;
 #endif
 
-uniform vec4 uGlobalColor;
-
 void main() {
-    gl_FragColor = uGlobalColor;
+    gl_FragColor = vec4(1.0,1.0,1.0,1.0);
 }
