@@ -1,3 +1,10 @@
+/**
+    ==========================================================
+        @section Engine
+        @author xav
+    ==========================================================
+*/
+
 //#region Imports & Stats
 // NOTE making this file a module might not be a good idea
 import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/17/Stats.js'
@@ -96,6 +103,7 @@ class Time {
 }
 //#endregion
 
+// BUG Input.getTopGamepadHandler returns null
 //#region Input
 class GamepadHandler {
     buttons = {};
@@ -107,8 +115,7 @@ class GamepadHandler {
         this.index = gamepad.index;
         this.haptics = gamepad.vibrationActuator;
 
-        this.pulse();
-        // this.playHapticEffect(100);
+        this.pulse(1.0, 80);
     }
 
     update(gamepad) {
@@ -187,6 +194,32 @@ class Input {
             return true;
 
         return false;
+    }
+
+    static getGamepadButton(index) {
+        for(const gamepadHandler of this.gamepadHandlers) {
+            if(gamepadHandler.getButton(index))
+                return true;
+        }
+
+        return false;
+    }
+
+    static getGamepadButtonDown(index) {
+        for(const gamepadHandler of this.gamepadHandlers) {
+            if(gamepadHandler.getButtonDown(index))
+                return true;
+        }
+
+        return false;
+    }
+
+    static getGamepadHandler(index) {
+        return this.gamepadHandlers[index];
+    }
+
+    static getTopGamepadHandler() {
+        return this.getGamepadHandler(this.gamepadHandlers.slice(-1)[0]);
     }
 
     static addGamepad(info) {
@@ -457,12 +490,8 @@ class Button extends SelectableText {
     }
 
     input() {
-        // TODO get only if not pressed the previous frame
-        if(Input.gamepads[0] != null) {
-            if(Input.gamepads[0].buttons[0].pressed) {
-                this.callback();
-            }
-        }
+        if(Input.getGamepadButtonDown(0))
+            this.callback();
 
         if(Input.getKeyDown('Enter'))
             this.callback();
@@ -499,6 +528,7 @@ class Menu {
 
     graphics;
     selected = 0;
+    inputCooldown = 0;
     constructor(name, x, y, ...items) {
         this.x = x ?? 0;
         this.y = y ?? 0;
@@ -513,8 +543,9 @@ class Menu {
         }
     }
 
-    start() {        
+    start() {
         this.graphics = new PIXI.Graphics();
+        this.axisWasReset = 0;
         
         let index = 0;
         this.selectables = [];
@@ -533,26 +564,55 @@ class Menu {
     }
 
     input() {
-        // TODO get only if not pressed the previous frame
-        if(Input.gamepads[0] != null) {
-            if(Input.gamepads[0].buttons[13].pressed) {
-                this.increment(0.1);
-            }
-
-            if(Input.gamepads[0].buttons[12].pressed) {
-                this.increment(-0.1);
-            }
-        }
-
-        if(Input.getKeyDown('ArrowDown')) {
+        const gamepad = Input.getGamepadHandler(0);
+        if(Input.getKeyDown('ArrowDown') || Input.getGamepadButtonDown(13)) {
+            this.inputCooldown = 3;
             this.increment(1);
         }
 
-        if(Input.getKeyDown('ArrowUp')) {
+        if(Input.getKeyDown('ArrowUp') || Input.getGamepadButtonDown(12)) {
+            this.inputCooldown = 3;
             this.increment(-1);
         }
 
+        this.axisInput(gamepad);
+        this.continuousInput(gamepad);
+
+        this.axisWasReset |= Math.abs(gamepad?.getAxis(1)) < 0.2;
         this.selectables[Math.floor(this.selected)]?.input();
+    }
+
+    axisInput(gamepad) {
+        if(!this.axisWasReset)
+            return;
+
+        if(gamepad?.getAxis(1) > 0.4) {
+            this.axisWasReset = false;
+            this.inputCooldown = 3;
+            this.increment(1);
+        }
+
+        if(gamepad?.getAxis(1) < -0.4) {
+            this.axisWasReset = false;
+            this.inputCooldown = 3;
+            this.increment(-1);
+        }
+    }
+
+    continuousInput(gamepad) {
+        this.inputCooldown -= 0.1 * Time.delta;
+        if(this.inputCooldown > 0)
+            return;
+        
+        if(Input.getKey('ArrowDown') || Input.getGamepadButton(13) || gamepad?.getAxis(1) > 0.4) {
+            this.inputCooldown = 0.6;
+            this.increment(1);
+        }
+
+        if(Input.getKey('ArrowUp') || Input.getGamepadButton(12) || gamepad?.getAxis(1) < -0.4) {
+            this.inputCooldown = 0.6;
+            this.increment(-1);
+        }
     }
 
     destroy() {
@@ -604,27 +664,6 @@ class ScrollingMenu extends Menu {
     }
 }
 //#endregion
-
-const sample = new ScrollingMenu('🥵🥵🥵', 100, 200, 12);
-const submenu = new ScrollingMenu('🍆💦', 100, 200);
-
-const s2b = new Button('button', () => {
-    console.log("button pressed");
-});
-const s4o = new Button('next', () => {
-    Menu.remove(sample);
-    Menu.add(submenu);
-});
-
-const s8c = new Button('back', () => {
-    Menu.remove(submenu);
-    Menu.add(sample);
-});
-
-sample.add(new MenuText('UI Menu'), new MenuBlank(), s2b, new SelectableText('selectable text'), s4o);
-submenu.add(new MenuText('Submenu'), new MenuBlank(), new SelectableText('it is what it is'), s8c);
-
-Menu.add(sample);
 //#endregion
 
 //#region Scenes
@@ -1100,7 +1139,37 @@ class World {
         Input.draw();
         stats.end();
     }
-}   
+}
+
+
+/**
+    ==========================================================
+        @section User Code
+    ==========================================================
+*/
+
+//#region TEMP Example Menu
+const sample = new ScrollingMenu('🥵🥵🥵', 100, 200, 12);
+const submenu = new ScrollingMenu('🍆💦', 100, 200);
+
+const s2b = new Button('button', () => {
+    console.log("button pressed");
+});
+const s4o = new Button('next', () => {
+    Menu.remove(sample);
+    Menu.add(submenu);
+});
+
+const s8c = new Button('back', () => {
+    Menu.remove(submenu);
+    Menu.add(sample);
+});
+
+sample.add(new MenuText('UI Menu'), new MenuBlank(), s2b, new SelectableText('selectable text'), new SelectableText('selectable text'), new SelectableText('selectable text'), s4o);
+submenu.add(new MenuText('Submenu'), new MenuBlank(), new SelectableText('it is what it is'), s8c);
+
+Menu.add(sample);
+//#endregion
 
 // for simulating low framerates
 // setInterval(() => { //
