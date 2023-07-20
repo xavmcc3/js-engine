@@ -1,3 +1,12 @@
+//#region Imports & Stats
+// NOTE making this file a module might not be a good idea
+import Stats from 'https://cdnjs.cloudflare.com/ajax/libs/stats.js/17/Stats.js'
+
+const stats = new Stats();
+stats.showPanel(0);
+document.body.appendChild(stats.dom);
+//#endregion
+
 // #region Graphics
 const pixijsParent = document.querySelector('#pixijs');
 const graphics = new PIXI.Application({
@@ -88,6 +97,50 @@ class Time {
 //#endregion
 
 //#region Input
+class GamepadHandler {
+    buttons = {};
+    axes = {};
+    
+    haptics;
+
+    constructor(index) {
+        this.index = index;
+    }
+
+    update(gamepad) {
+        if(!gamepad)
+            return;
+        
+        if(!this.haptics)
+            this.haptics = gamepad.vibrationActuator;
+
+        for(const index in gamepad.buttons) {
+            const pressed = gamepad.buttons[index].pressed;
+            let value = pressed ? 1 : null;
+            if(value > 0 && this.buttons[index] > 0)
+                value++;
+            
+            this.buttons[index] = value;
+        }
+
+        for(const index in gamepad.axes) {
+            this.axes[index] = gamepad.axes[index];
+        }
+    }
+
+    getButton(index) {
+        return this.buttons[index] > 0;
+    }
+
+    getButtonDown(index) {
+        return this.buttons[index] == 1;
+    }
+
+    getAxis(index) {
+        return this.axes[index];
+    }
+}
+
 class Input {
     static x = 0;
     static y = 0;
@@ -99,9 +152,8 @@ class Input {
     static down = []
     static pressed = []
 
-    static gamepadTrackers = {}
+    static gamepadHandlers = []
     static gamepadCount = 0;
-    static gamepads = {}
 
     static getKey(key) {
         if(this.down.includes(key))
@@ -118,15 +170,13 @@ class Input {
     }
 
     static addGamepad(info) {
-        const tracker = new GamepadTracker(info.index);
-        Input.gamepadTrackers[info.index] = tracker;
-        World.instantiate(tracker);
+        const tracker = new GamepadHandler(info.index);
+        Input.gamepadHandlers[info.index] = tracker;
         this.gamepadCount++;
     }
 
     static removeGamepad(info) {
-        Input.gamepadTrackers[info.index]?.destroy();
-        Input.gamepadTrackers[info.index] = null;
+        Input.gamepadHandlers.splice(info.index, 1);
         this.gamepadCount--;
     }
 
@@ -135,8 +185,11 @@ class Input {
     }
 
     static update() {
-        this.pressed = [...Input.down]
-        this.gamepads = navigator.getGamepads()
+        this.pressed = [...Input.down];
+        const gamepads = navigator.getGamepads();
+        for(const gamepadHandler of this.gamepadHandlers) {
+            gamepadHandler.update(gamepads[gamepadHandler.index]);
+        }
     }
 
     static draw() {
@@ -379,6 +432,13 @@ class Button extends SelectableText {
     }
 
     input() {
+        // TODO get only if not pressed the previous frame
+        if(Input.gamepads[0] != null) {
+            if(Input.gamepads[0].buttons[0].pressed) {
+                this.callback();
+            }
+        }
+
         if(Input.getKeyDown('Enter'))
             this.callback();
     }
@@ -451,6 +511,17 @@ class Menu {
     }
 
     input() {
+        // TODO get only if not pressed the previous frame
+        if(Input.gamepads[0] != null) {
+            if(Input.gamepads[0].buttons[13].pressed) {
+                this.increment(0.1);
+            }
+
+            if(Input.gamepads[0].buttons[12].pressed) {
+                this.increment(-0.1);
+            }
+        }
+
         if(Input.getKeyDown('ArrowDown')) {
             this.increment(1);
         }
@@ -459,7 +530,7 @@ class Menu {
             this.increment(-1);
         }
 
-        this.selectables[this.selected]?.input();
+        this.selectables[Math.floor(this.selected)]?.input();
     }
 
     destroy() {
@@ -479,10 +550,10 @@ class Menu {
         if(this.selectables.length < 1)
             return;
 
-        this.selectables[this.selected]?.deselect();
+        this.selectables[Math.floor(this.selected)]?.deselect();
 
         this.selected = Math.max(0, Math.min(this.selectables.length - 1, index));
-        this.selectables[this.selected].select();
+        this.selectables[Math.floor(this.selected)].select();
     }
 
     increment(amount) {
@@ -503,7 +574,7 @@ class ScrollingMenu extends Menu {
     }
 
     tick() {
-        const target = this.selectables[this.selected].y * -1;
+        const target = this.selectables[Math.floor(this.selected)].y * -1;
         this.y = this.y + (target + this.startY - this.y) / this.smoothing;
     }
 
@@ -838,22 +909,23 @@ class Agent extends Entity {
     // NOTE only multplying the position change by delta might
     // be a bad idea, but it seems to work
     lateupdate() {
-        this.velocity.x += this.acceleration.x;
-        this.velocity.y += this.acceleration.y;
-        this.acceleration = Vector.zero;
+        this.velocity.x += this.acceleration.x * Time.delta;
+        this.velocity.y += this.acceleration.y * Time.delta;
         this.x += this.velocity.x * Time.delta;
         this.y += this.velocity.y * Time.delta;
-
+        
         this.velocity.setMagnitude(Math.min(this.velocity.magnitude, 10));
         this.velocity.x *= this.friction;
         this.velocity.y *= this.friction;
-
-        this.angularVelocity += this.angularAcceleration;
+        
+        this.angularVelocity += this.angularAcceleration * Time.delta;
         this.angle += this.angularVelocity * Time.delta;
+        
+        this.acceleration = Vector.zero;
         this.angularAcceleration = 0;
         
         this.angularVelocity = Math.min(Math.abs(this.angularVelocity), 0.015) * Math.sign(this.angularVelocity);
-        this.angularVelocity *= this.angularFriction;
+        this.angularVelocity *= this.angularFriction * Time.delta;
 
 
         if(this.x < 0) {
@@ -982,6 +1054,8 @@ class World {
 
     static update() {
         Time.frames = requestAnimationFrame(World.update); // TODO bring back
+
+        stats.begin();
         Time.getDelta();
         Input.prep();
 
@@ -1003,6 +1077,7 @@ class World {
         Process.update();
         Input.update();
         Input.draw();
+        stats.end();
     }
 }   
 
