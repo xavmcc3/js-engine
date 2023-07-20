@@ -2,6 +2,7 @@
 WOOOOOOHOOOO NEW JAVAFUCKINGSCRIPT THING
 
 Uses pixijs for rendering
+oh shit and also that status thing
 
 ## Why
 idfk, its useful for some things
