@@ -103,16 +103,17 @@ class GamepadHandler {
     
     haptics;
 
-    constructor(index) {
-        this.index = index;
+    constructor(gamepad) {
+        this.index = gamepad.index;
+        this.haptics = gamepad.vibrationActuator;
+
+        this.pulse();
+        // this.playHapticEffect(100);
     }
 
     update(gamepad) {
         if(!gamepad)
             return;
-        
-        if(!this.haptics)
-            this.haptics = gamepad.vibrationActuator;
 
         for(const index in gamepad.buttons) {
             const pressed = gamepad.buttons[index].pressed;
@@ -138,6 +139,25 @@ class GamepadHandler {
 
     getAxis(index) {
         return this.axes[index];
+    }
+
+    playHapticEffect(options = {}) {
+        const type = this.haptics.type;
+        if(!this.haptics)
+        return;
+        
+        this.haptics.playEffect(type, options);
+    }
+
+    pulse(value = 1.0, duration = 100) {
+        const options = {
+            startDelay: 0,
+            duration: duration,
+            weakMagnitude: value,
+            strongMagnitude: 0,
+        };
+
+        this.playHapticEffect(options);
     }
 }
 
@@ -170,7 +190,7 @@ class Input {
     }
 
     static addGamepad(info) {
-        const tracker = new GamepadHandler(info.index);
+        const tracker = new GamepadHandler(info);
         Input.gamepadHandlers[info.index] = tracker;
         this.gamepadCount++;
     }
@@ -268,6 +288,11 @@ class Process {
 
 //#region Menus
 // TODO Also make Graph Menus (on a new branch)
+// NOTE Not destroing the graphics objects of the menu items
+// is basically a memory leak, so idfk. It might not be tho
+// TODO add support for exit animations
+// and immediate destruction options
+
 class MenuItem {
     graphics = null;
     constructor() {
@@ -445,10 +470,7 @@ class Button extends SelectableText {
 }
 //#endregion
 
-// NOTE Not destroing the graphics objects of the menu items
-// is basically a memory leak, so idfk. It might not be tho
-// TODO add support for exit animations
-// and immediate destruction options
+//#region Menu Layouts
 class Menu {
     static menus = []; // NOTE this is the list of ACTIVE menus
     static add(menu) {
@@ -565,7 +587,6 @@ class Menu {
     setup(index, item) {}
 }
 
-//#region Menu Layouts
 class ScrollingMenu extends Menu {
     constructor(name, x, y, smoothing, ...items) {
         super(name, x, y, ...items);
