@@ -14,6 +14,9 @@ stats.showPanel(0);
 document.body.appendChild(stats.dom);
 //#endregion
 
+// TODO make sure to set the graphics positions before adding 
+// them to the stage in all cases --> menus & entities 
+// especially
 // #region Graphics
 const pixijsParent = document.querySelector('#pixijs');
 const graphics = new PIXI.Application({
@@ -107,6 +110,7 @@ class Time {
 //#region Input
 class GamepadHandler {
     buttons = {};
+    values = {};
     axes = {};
     
     haptics;
@@ -123,6 +127,7 @@ class GamepadHandler {
             return;
 
         for(const index in gamepad.buttons) {
+            this.values[index] = gamepad.buttons[index].value;
             const pressed = gamepad.buttons[index].pressed;
             let value = pressed ? 1 : null;
             if(value > 0 && this.buttons[index] > 0)
@@ -142,6 +147,10 @@ class GamepadHandler {
 
     getButtonDown(index) {
         return this.buttons[index] == 1;
+    }
+
+    getButtonValue(index) {
+        return this.values[index];
     }
 
     getAxis(index) {
@@ -233,16 +242,16 @@ class Input {
         this.gamepadCount--;
     }
 
-    static prep() {
-        Input.gamepads = navigator.getGamepads();
-    }
-
     static update() {
         this.pressed = [...Input.down];
         const gamepads = navigator.getGamepads();
         for(const gamepadHandler of this.gamepadHandlers) {
             gamepadHandler.update(gamepads[gamepadHandler.index]);
         }
+    }
+
+    static prep() {
+        // NOTE any pre-frame initalization
     }
 
     static draw() {
@@ -726,6 +735,8 @@ class Scene {
 }
 //#endregion
 
+// TODO add a 'halt' block that functions like a 
+// return
 //#region Sequencer
 class Task {
     ended = false;
@@ -847,6 +858,7 @@ class Entity {
         this.graphics.drawRect(10, 10, 20, 20);
 
         this.graphics.endFill();
+        this.graphics.position.set(this.x, this.y);
         graphics.stage.addChild(this.graphics);
     }
 
@@ -933,16 +945,17 @@ class Agent extends Entity {
         circles.endFill();
         
         this.graphics.addChild(circles);
+        this.graphics.position.set(this.x, this.y);
         graphics.stage.addChild(this.graphics);
     }
 
     update() {
         this.addForce(new Vector(0, this.gravity));
 
-        const gamepad = Input.gamepads[0];
+        const gamepad = Input.getGamepadHandler(0);
 
-        this.tl = gamepad?.buttons[6].value ?? Input.getKey('ArrowLeft');
-        this.tr = gamepad?.buttons[7].value ?? Input.getKey('ArrowRight');
+        this.tl = gamepad?.getButtonValue(6) ?? Input.getKey('ArrowLeft');
+        this.tr = gamepad?.getButtonValue(7) ?? Input.getKey('ArrowRight');
 
         const force = (this.tl + this.tr) * this.force;
         this.addForce(Vector.one.setMagnitude(force).setDirection(this.angle));
@@ -965,10 +978,11 @@ class Agent extends Entity {
         this.addAngularForce(this.tl * this.angularForce);
         this.addAngularForce(-this.tr * this.angularForce);
     }
-
-    // NOTE only multplying the position change by delta might
-    // be a bad idea, but it seems to work
+    
     lateupdate() {
+        // NOTE the delta time multiplication is only
+        // an approximation and therefore isn't 
+        // perfect, but it's close enough
         this.velocity.x += this.acceleration.x * Time.delta;
         this.velocity.y += this.acceleration.y * Time.delta;
         this.x += this.velocity.x * Time.delta;
@@ -1029,6 +1043,7 @@ class Particle extends Entity {
         this.graphics.endFill();
 
         this.graphics.blendMode = PIXI.BLEND_MODES.ADD;
+        this.graphics.position.set(this.x, this.y);
         graphics.stage.addChild(this.graphics);
     }
 
@@ -1084,6 +1099,7 @@ class Circle extends Entity {
         this.graphics.drawCircle(0, 0, 20);
         this.graphics.endFill();
 
+        this.graphics.position.set(this.x, this.y);
         graphics.stage.addChild(this.graphics);
     }
 
@@ -1165,7 +1181,7 @@ const s8c = new Button('back', () => {
     Menu.add(sample);
 });
 
-sample.add(new MenuText('UI Menu'), new MenuBlank(), s2b, new SelectableText('selectable text'), new SelectableText('selectable text'), new SelectableText('selectable text'), s4o);
+sample.add(new MenuText('UI Menu'), new MenuBlank(), s2b, new SelectableText('selectable text'), s4o);
 submenu.add(new MenuText('Submenu'), new MenuBlank(), new SelectableText('it is what it is'), s8c);
 
 Menu.add(sample);
