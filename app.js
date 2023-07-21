@@ -27,6 +27,24 @@ const graphics = new PIXI.Application({
 pixijsParent.appendChild(graphics.view);
 // #endregion
 
+//#region Shaders
+async function fetchShader(path) {
+    const res = await fetch(path);
+    return await res.text();
+}
+
+const uniforms = {
+    'tint_amount': 0.0,
+    'time': 0.0,
+}
+
+const frag = await fetchShader('./shaders/fragment.frag');
+const shader = new PIXI.Filter('', frag, uniforms);
+
+graphics.stage.filterArea = graphics.screen;
+graphics.stage.filters = [shader];
+//#endregion
+
 //#region Utils
 const hexMap = "0123456789abcdef";
 
@@ -1129,7 +1147,7 @@ class World {
     }
 
     static update() {
-        Time.frames = requestAnimationFrame(World.update); // TODO bring back
+        Time.frames = uniforms.time = requestAnimationFrame(World.update); // TODO bring back
 
         stats.begin();
         Time.getDelta();
@@ -1195,10 +1213,15 @@ Menu.add(sample);
 // }, 10);
 
 // TODO Set framerate n shit here
-World.start();
 
 const main = new Scene(() => {
     World.instantiate(new Circle(graphics.view.width/2, graphics.view.height/2));
     World.instantiate(new Agent(graphics.view.width/2, graphics.view.height/2));
 });
-Scene.load(main);
+
+function onload() {
+    World.start();
+    Scene.load(main);
+}
+
+onload();
