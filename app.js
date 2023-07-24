@@ -36,6 +36,7 @@ async function fetchShader(path) {
 const uniforms = {
     'tint_amount': 0.0,
     'time': 0.0,
+    'aspect': 1.0
 }
 
 const frag = await fetchShader('./shaders/fragment.frag');
@@ -1148,6 +1149,7 @@ class World {
 
     static update() {
         Time.frames = uniforms.time = requestAnimationFrame(World.update); // TODO bring back
+        uniforms.aspect = graphics.view.height / graphics.view.width;
 
         stats.begin();
         Time.getDelta();
