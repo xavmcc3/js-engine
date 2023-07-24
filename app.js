@@ -17,6 +17,8 @@ document.body.appendChild(stats.dom);
 // TODO make sure to set the graphics positions before adding 
 // them to the stage in all cases --> menus & entities 
 // especially
+// TODO move more of the graphics initialization to the Graphics
+// class
 // #region Graphics
 const pixijsParent = document.querySelector('#pixijs');
 const graphics = new PIXI.Application({
@@ -25,32 +27,41 @@ const graphics = new PIXI.Application({
 });
 
 pixijsParent.appendChild(graphics.view);
+
+class Graphics {
+    static app = graphics;
+
+    static uniforms = {
+        'tint_amount': 0.0,
+        'time': 0.0,
+        'aspect': 1.0
+    };
+
+    static async fetchShader(path) {
+        const res = await fetch(path);
+        return await res.text();
+    }
+
+    static async setGraphicsShader(path, uniforms) {
+        const fragment = await Graphics.fetchShader(path);
+        const shader = new PIXI.Filter('', fragment, uniforms ?? Graphics.uniforms);
+
+        graphics.stage.filterArea = graphics.screen;
+        graphics.stage.filters = [shader];
+    }
+}
 // #endregion
-
-//#region Shaders
-async function fetchShader(path) {
-    const res = await fetch(path);
-    return await res.text();
-}
-
-const uniforms = {
-    'tint_amount': 0.0,
-    'time': 0.0,
-    'aspect': 1.0
-}
-
-const frag = await fetchShader('./shaders/fragment.frag');
-const shader = new PIXI.Filter('', frag, uniforms);
-
-graphics.stage.filterArea = graphics.screen;
-graphics.stage.filters = [shader];
-//#endregion
 
 //#region Utils
 const hexMap = "0123456789abcdef";
 
 function rand(min, max) {
     return (Math.random() * (max - min + 1)) + min;
+}
+
+async function fetchFile(path) {
+    const res = await fetch(path);
+    return await res.text();
 }
 
 class Vector {
@@ -347,6 +358,7 @@ class Process {
 }
 // #endregion
 
+// TODO make menus work with the Scene system
 //#region Menus
 // TODO Also make Graph Menus (on a new branch)
 // NOTE Not destroing the graphics objects of the menu items
@@ -370,6 +382,7 @@ class MenuItem {
         this.graphics = new PIXI.Graphics();
         this.initialize();
 
+        this.graphics.position.set(this.x, this.y);
         parent.graphics.addChild(this.graphics);
     }
 
@@ -421,6 +434,7 @@ class MenuText extends MenuItem {
             align: 'left',
         });
 
+        this.graphics.position.set(this.x, this.y);
         text.position.set(0, -fontSize / 2);
         this.graphics.addChild(text);
     }
@@ -503,6 +517,7 @@ class SelectableText extends Selectable {
             align: 'left'
         });
 
+        this.graphics.position.set(this.x, this.y);
         text.position.set(0, -fontSize / 2);
         this.graphics.addChild(text);
         this.text = text;
@@ -1148,8 +1163,8 @@ class World {
     }
 
     static update() {
-        Time.frames = uniforms.time = requestAnimationFrame(World.update); // TODO bring back
-        uniforms.aspect = graphics.view.height / graphics.view.width;
+        Time.frames = Graphics.uniforms.time = requestAnimationFrame(World.update); // TODO bring back
+        Graphics.uniforms.aspect = graphics.view.height / graphics.view.width;
 
         stats.begin();
         Time.getDelta();
@@ -1207,6 +1222,10 @@ submenu.add(new MenuText('Submenu'), new MenuBlank(), new SelectableText('it is 
 Menu.add(sample);
 //#endregion
 
+//#region TEMP Example Shader
+await Graphics.setGraphicsShader('./shaders/fragment.frag');
+//#endregion
+
 // for simulating low framerates
 // setInterval(() => { //
 //     setTimeout(() => {
@@ -1221,9 +1240,5 @@ const main = new Scene(() => {
     World.instantiate(new Agent(graphics.view.width/2, graphics.view.height/2));
 });
 
-function onload() {
-    World.start();
-    Scene.load(main);
-}
-
-onload();
+Scene.load(main);
+World.start();
