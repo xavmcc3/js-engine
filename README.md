@@ -1,4 +1,8 @@
-# Js Engine
+<p style="text-align:center" align="center">
+    <img src="src/js.png"  width="200">
+</p>
+
+# <img src="src/js-simple.png"  width="25"> Js Engine
 WOOOOOOHOOOO NEW JAVAFUCKINGSCRIPT THING
 
 Uses pixijs for rendering
@@ -22,7 +26,9 @@ really dont wanna write this fr fr ong
 
 ## Scenes
 
-## Menu
+## Menus
+
+## Shaders
 
 ## Vectors
 
