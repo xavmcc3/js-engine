@@ -32,9 +32,12 @@ class Graphics {
     static app = graphics;
 
     static uniforms = {
+        'iResolution': { x: 0.0, y: 0.0 },
+        'iTime': 0.0,
+
         'tint_amount': 0.0,
-        'time': 0.0,
-        'aspect': 1.0
+        'aspect': 1.0,
+        'time': 0.0
     };
 
     static async fetchShader(path) {
@@ -1163,8 +1166,10 @@ class World {
     }
 
     static update() {
-        Time.frames = Graphics.uniforms.time = requestAnimationFrame(World.update); // TODO bring back
+        Time.frames = Graphics.uniforms.iTime = Graphics.uniforms.time = requestAnimationFrame(World.update); // TODO bring back
         Graphics.uniforms.aspect = graphics.view.height / graphics.view.width;
+        Graphics.uniforms.iResolution.y = graphics.view.height;
+        Graphics.uniforms.iResolution.x = graphics.view.width;
 
         stats.begin();
         Time.getDelta();

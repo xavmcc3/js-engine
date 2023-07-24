@@ -24,7 +24,7 @@ vec3 gerstner_wave(vec2 pos, vec2 direction, float wavelength, float steepness) 
 void main(void) {
     vec2 uv = vTextureCoord;
 
-    vec2 wave = gerstner_wave(uv, vec2(0.0, 1.0), 0.05, 0.15).xy;
+    vec2 wave = gerstner_wave(uv, vec2(1.0, 0.3), 0.05, 0.15).xy;
     uv += wave * 1.0;
 
     // float dist = -0.5 - uv.x;
