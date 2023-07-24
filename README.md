@@ -1,6 +1,8 @@
-![Js Engine](src/js-simple.png)
+<p style="text-align:center" align="center">
+    <img src="src/js.png"  width="200">
+</p>
 
-# Js Engine
+# <img src="src/js-simple.png"  width="25"> Js Engine
 WOOOOOOHOOOO NEW JAVAFUCKINGSCRIPT THING
 
 Uses pixijs for rendering
