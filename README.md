@@ -33,4 +33,4 @@ really dont wanna write this fr fr ong
 
 ## The `rand` Function
 
-balls
+it is what it is
