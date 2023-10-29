@@ -3,7 +3,8 @@
 </p>
 
 # <img src="src/js-simple.png"  width="25"> Js Engine
-A Game Engine developed in JavaScript used for quick prototyping and easy development. Documentation still isn't done, but I'm working on it, so chill.
+A Game Engine developed in JavaScript used for quick prototyping and easy development. Documentation still isn't done.
+
 The engine is made up of a series of systems that tie into a larger class. Game Objects are called Entites and can be extended with child classes.
 Uses pixijs for rendering and that JS library for statuses.
 
@@ -27,6 +28,8 @@ const main = new Scene(() => {
 Scene.load(main);
 World.start();
 ```
+
+New Game Entities can be created by extending the `Entity` class.
 
 ## Documentation
 really dont wanna write this fr fr ong
