@@ -3,10 +3,9 @@
 </p>
 
 # <img src="src/js-simple.png"  width="25"> Js Engine
-WOOOOOOHOOOO NEW JAVAFUCKINGSCRIPT THING
-
-Uses pixijs for rendering
-oh shit and also that status thing
+A Game Engine developed in JavaScript used for quick prototyping and easy development. Documentation still isn't done, but I'm working on it, so chill.
+The engine is made up of a series of systems that tie into a larger class. Game Objects are called Entites and can be extended with child classes.
+Uses pixijs for rendering and that JS library for statuses.
 
 ## Why
 idfk, its useful for some things
