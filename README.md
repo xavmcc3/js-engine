@@ -8,7 +8,25 @@ The engine is made up of a series of systems that tie into a larger class. Game 
 Uses pixijs for rendering and that JS library for statuses.
 
 ## Why
-idfk, its useful for some things
+As I've developed games in JavaScript, this engine started to take shape. I decided to clean it up and keep it in one place.
+
+## Getting Started
+
+Include the main JavaScript file in your html page somehow.
+```html
+<script src="app.js" defer></script>
+```
+
+A game can be created with the following code.
+```js
+const main = new Scene(() => {
+    World.instantiate(new Circle(graphics.view.width/2, graphics.view.height/2));
+    World.instantiate(new Agent(graphics.view.width/2, graphics.view.height/2));
+});
+
+Scene.load(main);
+World.start();
+```
 
 ## Documentation
 really dont wanna write this fr fr ong
