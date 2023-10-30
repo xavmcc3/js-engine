@@ -44,6 +44,8 @@ really dont wanna write this fr fr ong
 
 ## Sequencer
 
+actually important but i forgor 💀
+
 ## Scenes
 
 ## Menus
@@ -53,5 +55,9 @@ really dont wanna write this fr fr ong
 ## Vectors
 
 ## The `rand` Function
+
+## TO DO
+ - [ ] clean up the whole system by making individual parts that can be added to the engine `World`
+ - [ ] Make wrappers for the more convoluted sections
 
 it is what it is
